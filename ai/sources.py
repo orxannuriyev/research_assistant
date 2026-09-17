@@ -5,19 +5,6 @@ Three coroutines, all returning `list[Source]`:
   fetch_wikipedia(query)  — Wikipedia REST API (no key)
   fetch_arxiv(query)      — arXiv public Atom API (no key)
   fetch_web(query)        — pluggable web search (Tavily / Serper / DuckDuckGo)
-
-Design notes
-------------
-- We use `httpx.AsyncClient` because it gives us a single HTTP library that
-  works async out of the box. The import is lazy so `import ai` works even
-  if httpx is not installed (e.g. running smoke tests offline).
-
-- All three coroutines accept an optional `client` parameter. In production,
-  the SE layer should pass a single shared `httpx.AsyncClient` to amortize
-  connection setup. In tests, students can pass a fake.
-
-- The web search provider abstraction follows the same pattern as the LLM/VLM
-  providers in `ai.providers`. Set `WEB_SEARCH_PROVIDER` env var to pick.
 """
 
 from __future__ import annotations
@@ -31,11 +18,9 @@ from typing import Any
 from ai.providers.base import ProviderError
 from ai.schemas import Source
 
-
 # ---------------------------------------------------------------------------
 # httpx is imported lazily so the package stays importable without it.
 # ---------------------------------------------------------------------------
-
 def _require_httpx():
     try:
         import httpx  # type: ignore
@@ -46,6 +31,12 @@ def _require_httpx():
         ) from e
     return httpx
 
+# Genuine browser User-Agent to satisfy Wikipedia and arXiv API rate limits
+_DEFAULT_HEADERS = {
+    "User-Agent": "ResearchAssistantBot/1.0 (https://github.com/example/research_assistant; contact@example.com)",
+    "Api-User-Agent": "ResearchAssistantBot/1.0",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # ---------------------------------------------------------------------------
 # Wikipedia
@@ -62,20 +53,16 @@ async def fetch_wikipedia(
     client: Any = None,
     timeout: float = 10.0,
 ) -> list[Source]:
-    """Search Wikipedia and return the top-N article summaries.
-
-    No API key required.
-    """
+    """Search Wikipedia and return the top-N article summaries."""
     if not query.strip():
         return []
     httpx = _require_httpx()
 
     own_client = client is None
     if own_client:
-        client = httpx.AsyncClient(timeout=timeout)
+        client = httpx.AsyncClient(timeout=timeout, headers=_DEFAULT_HEADERS, follow_redirects=True)
 
     try:
-        # Step 1: search for matching titles.
         try:
             r = await client.get(
                 _WIKI_SEARCH_URL,
@@ -86,9 +73,10 @@ async def fetch_wikipedia(
                     "namespace": 0,
                     "format": "json",
                 },
+                headers=_DEFAULT_HEADERS,
             )
             r.raise_for_status()
-        except Exception as e:  # pragma: no cover - network path
+        except Exception as e:
             raise ProviderError(f"Wikipedia search failed: {e}") from e
 
         data = r.json()
@@ -96,17 +84,18 @@ async def fetch_wikipedia(
             return []
         titles = data[1]
 
-        # Step 2: pull summary for each title.
         sources: list[Source] = []
         for title in titles:
             try:
                 summ = await client.get(
-                    _WIKI_SUMMARY_URL.format(title=title.replace(" ", "_"))
+                    _WIKI_SUMMARY_URL.format(title=title.replace(" ", "_")),
+                    headers=_DEFAULT_HEADERS,
                 )
                 summ.raise_for_status()
+                body = summ.json()
             except Exception:
-                continue  # one bad title shouldn't kill the whole fetch
-            body = summ.json()
+                continue
+
             extract = (body.get("extract") or "").strip()
             if not extract:
                 continue
@@ -130,7 +119,7 @@ async def fetch_wikipedia(
 # arXiv
 # ---------------------------------------------------------------------------
 
-_ARXIV_URL = "http://export.arxiv.org/api/query"
+_ARXIV_URL = "https://export.arxiv.org/api/query"
 _ATOM_NS = "{http://www.w3.org/2005/Atom}"
 
 
@@ -139,20 +128,20 @@ async def fetch_arxiv(
     *,
     max_results: int = 3,
     client: Any = None,
-    timeout: float = 10.0,
+    timeout: float = 20.0,
 ) -> list[Source]:
-    """Search arXiv and return the top-N matching paper abstracts.
-
-    No API key required. Returns an empty list rather than raising on a
-    well-formed but empty response.
-    """
+    """Search arXiv and return the top-N matching paper abstracts."""
     if not query.strip():
         return []
     httpx = _require_httpx()
 
     own_client = client is None
     if own_client:
-        client = httpx.AsyncClient(timeout=timeout)
+        client = httpx.AsyncClient(
+            timeout=timeout, 
+            follow_redirects=True, 
+            headers=_DEFAULT_HEADERS
+        )
     try:
         try:
             r = await client.get(
@@ -164,9 +153,10 @@ async def fetch_arxiv(
                     "sortBy": "relevance",
                     "sortOrder": "descending",
                 },
+                headers=_DEFAULT_HEADERS,
             )
             r.raise_for_status()
-        except Exception as e:  # pragma: no cover - network path
+        except Exception as e:
             raise ProviderError(f"arXiv query failed: {e}") from e
 
         return _parse_arxiv_atom(r.text)
@@ -216,7 +206,7 @@ class WebSearchProvider(abc.ABC):
 
 
 class TavilyProvider(WebSearchProvider):
-    """Tavily search API. Free tier: 1000 req/month. Sign up: tavily.com"""
+    """Tavily search API."""
 
     URL = "https://api.tavily.com/search"
 
@@ -248,7 +238,7 @@ class TavilyProvider(WebSearchProvider):
                     },
                 )
                 r.raise_for_status()
-            except Exception as e:  # pragma: no cover - network path
+            except Exception as e:
                 raise ProviderError(f"Tavily search failed: {e}") from e
             body = r.json()
             return [
@@ -267,7 +257,7 @@ class TavilyProvider(WebSearchProvider):
 
 
 class SerperProvider(WebSearchProvider):
-    """Serper.dev (Google search proxy). Free tier: 2500 queries. Sign up: serper.dev"""
+    """Serper.dev search API."""
 
     URL = "https://google.serper.dev/search"
 
@@ -296,7 +286,7 @@ class SerperProvider(WebSearchProvider):
                     json={"q": query, "num": max_results},
                 )
                 r.raise_for_status()
-            except Exception as e:  # pragma: no cover - network path
+            except Exception as e:
                 raise ProviderError(f"Serper search failed: {e}") from e
             body = r.json()
             return [
@@ -315,20 +305,19 @@ class SerperProvider(WebSearchProvider):
 
 
 class DuckDuckGoProvider(WebSearchProvider):
-    """DuckDuckGo search via the `duckduckgo-search` package. No API key.
-
-    This provider runs the (sync) `duckduckgo-search` library inside a thread
-    so it presents the same async interface as the others.
-    """
+    """DuckDuckGo search via `ddgs` or `duckduckgo-search` package."""
 
     def __init__(self) -> None:
         try:
-            import duckduckgo_search  # type: ignore  # noqa: F401
-        except ImportError as e:
-            raise ProviderError(
-                "The `duckduckgo-search` package is required for DuckDuckGoProvider. "
-                "Install with `pip install duckduckgo-search`."
-            ) from e
+            import ddgs  # type: ignore  # noqa: F401
+        except ImportError:
+            try:
+                import duckduckgo_search  # type: ignore  # noqa: F401
+            except ImportError as e:
+                raise ProviderError(
+                    "The `ddgs` package is required for DuckDuckGoProvider. "
+                    "Install with `pip install ddgs`."
+                ) from e
 
     async def search(
         self,
@@ -337,33 +326,38 @@ class DuckDuckGoProvider(WebSearchProvider):
         max_results: int = 3,
         client: Any = None,
     ) -> list[Source]:
-        # `client` is unused — this provider doesn't speak HTTP directly.
         import asyncio
-        from duckduckgo_search import DDGS  # type: ignore
+        try:
+            from ddgs import DDGS  # type: ignore
+        except ImportError:
+            from duckduckgo_search import DDGS  # type: ignore
 
         def _run() -> list[Source]:
             results: list[Source] = []
-            with DDGS() as ddgs:
-                for item in ddgs.text(query, max_results=max_results):
-                    if not item.get("href"):
-                        continue
-                    results.append(Source(
-                        title=item.get("title", "(untitled)"),
-                        url=item["href"],
-                        snippet=item.get("body", ""),
-                        origin="web",
-                    ))
+            try:
+                with DDGS() as ddgs_client:
+                    if hasattr(ddgs_client, "impersonate"):
+                        ddgs_client.impersonate = None
+                    
+                    for item in ddgs_client.text(query, max_results=max_results):
+                        if not item.get("href"):
+                            continue
+                        results.append(Source(
+                            title=item.get("title", "(untitled)"),
+                            url=item["href"],
+                            snippet=item.get("body", ""),
+                            origin="web",
+                        ))
+            except Exception:
+                pass
             return results
 
         return await asyncio.to_thread(_run)
 
 
 def get_web_search_provider() -> WebSearchProvider:
-    """Factory: select the configured web-search provider.
-
-    Reads `WEB_SEARCH_PROVIDER` env var. Default: tavily.
-    """
-    name = os.getenv("WEB_SEARCH_PROVIDER", "tavily").lower().strip()
+    """Factory: select the configured web-search provider."""
+    name = os.getenv("WEB_SEARCH_PROVIDER", "duckduckgo").lower().strip()
     if name == "tavily":
         return TavilyProvider()
     if name == "serper":
