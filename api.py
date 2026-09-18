@@ -8,7 +8,7 @@ app = FastAPI(title="Research Assistant API", version="1.0")
 
 class ResearchRequest(BaseModel):
     question: str
-    sources: str | None = None
+    sources: str | None = "web, wikipedia, arxiv"  # Default olaraq hamısı seçilir, istifadəçi istəsə dəyişə bilər
     no_cache: bool = False
 
 class CitationResponse(BaseModel):
@@ -32,7 +32,7 @@ def run_research(request: ResearchRequest):
         settings = Settings()
         engine = ResearchEngine(settings=settings)
         
-        # Execute the research process directly (letting the engine handle source validation/normalization)
+        # Execute the research process directly via the engine
         result = engine.research(
             question=request.question,
             sources=request.sources,
