@@ -1,0 +1,31 @@
+{
+  "id": "q1",
+  "question": "What is photosynthesis and what are its main stages?",
+  "difficulty": "easy",
+  "answer": {
+    "question": "What is photosynthesis and what are its main stages?",
+    "answer": "Based on the available sources, here is a synthesized answer that draws from multiple references [1], [2], [3]. The sources broadly agree on the main points; differences in emphasis are noted in each reference [1].",
+    "citations": [
+      {
+        "index": 1,
+        "title": "Photosynthesis",
+        "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+        "origin": "wikipedia"
+      },
+      {
+        "index": 2,
+        "title": "Light-Dependent Reactions of Photosynthesis",
+        "url": "https://arxiv.org/abs/1706.03762",
+        "origin": "arxiv"
+      },
+      {
+        "index": 3,
+        "title": "How Plants Make Food",
+        "url": "https://example.com/plants",
+        "origin": "web"
+      }
+    ]
+  },
+  "source_count": 3,
+  "mode": "offline"
+}

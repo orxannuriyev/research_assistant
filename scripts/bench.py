@@ -34,7 +34,11 @@ async def sequential(client: httpx.AsyncClient) -> tuple[int, float]:
     start = time.monotonic()
     total = 0
     for fetcher in [fetch_wikipedia, fetch_arxiv, fetch_web]:
-        results = await fetcher(QUERY, max_results=MAX_RESULTS, client=client)  # type: ignore[call-arg]
+        try:
+            results = await fetcher(QUERY, max_results=MAX_RESULTS, client=client)  # type: ignore[call-arg]
+        except Exception as exc:
+            print(f"  ! sequential source failed: {exc}")
+            continue
         total += len(results)
     elapsed = time.monotonic() - start
     return total, elapsed
