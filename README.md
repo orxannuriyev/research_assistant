@@ -92,6 +92,28 @@ For live research:
 docker run --rm --env-file .env finalproj python -m researcher ask "What is photosynthesis?"
 ```
 
+To run and test the HTTP API locally without Docker:
+
+```powershell
+.\venv\Scripts\python.exe -m uvicorn api:app --reload --host 127.0.0.1 --port 8000
+```
+
+Open the interactive API documentation at `http://127.0.0.1:8000/docs`. From another PowerShell terminal, send a request with:
+
+```powershell
+$body = @{ question = "What is photosynthesis?"; sources = "wiki,arxiv"; no_cache = $true } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/research" -Method Post -ContentType "application/json" -Body $body
+```
+
+To run the HTTP API in Docker:
+
+```powershell
+docker run --rm --env-file .env -p 8000:8000 finalproj `
+	python -m uvicorn api:app --host 0.0.0.0 --port 8000
+```
+
+Open the interactive API documentation at `http://127.0.0.1:8000/docs`.
+
 ## Project layout
 
 ```text
