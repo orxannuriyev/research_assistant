@@ -1,0 +1,19 @@
+{
+  "id": "q3",
+  "question": "What were the main causes of the 2008 financial crisis?",
+  "difficulty": "medium",
+  "answer": {
+    "question": "What were the main causes of the 2008 financial crisis?",
+    "answer": "Based on the available sources, here is a synthesized answer that draws from multiple references [1]. The sources broadly agree on the main points; differences in emphasis are noted in each reference [1].",
+    "citations": [
+      {
+        "index": 1,
+        "title": "Generic reference",
+        "url": "https://example.com/generic",
+        "origin": "web"
+      }
+    ]
+  },
+  "source_count": 1,
+  "mode": "offline"
+}

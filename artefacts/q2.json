@@ -1,0 +1,25 @@
+{
+  "id": "q2",
+  "question": "How do transformer-based language models handle long context windows?",
+  "difficulty": "medium",
+  "answer": {
+    "question": "How do transformer-based language models handle long context windows?",
+    "answer": "Based on the available sources, here is a synthesized answer that draws from multiple references [1], [2]. The sources broadly agree on the main points; differences in emphasis are noted in each reference [1].",
+    "citations": [
+      {
+        "index": 1,
+        "title": "Transformer (machine learning model)",
+        "url": "https://en.wikipedia.org/wiki/Transformer_(machine_learning)",
+        "origin": "wikipedia"
+      },
+      {
+        "index": 2,
+        "title": "Attention Is All You Need",
+        "url": "https://arxiv.org/abs/1706.03762",
+        "origin": "arxiv"
+      }
+    ]
+  },
+  "source_count": 2,
+  "mode": "offline"
+}
