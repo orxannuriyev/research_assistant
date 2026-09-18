@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import time
+
 import pytest
 
 from ai.schemas import AnswerWithCitations, Source
@@ -47,3 +50,20 @@ async def test_engine_runs_full_offline_pipeline() -> None:
     assert session.sources_used == ["wikipedia", "web"]
     assert session.answer is not None
     assert session.answer.answer == "Offline answer [1]."
+
+
+@pytest.mark.asyncio
+async def test_engine_times_out_slow_ai_synthesis() -> None:
+    class SlowAIService:
+        def synthesize(self, question: str, sources: list[Source]) -> AnswerWithCitations:
+            time.sleep(0.1)
+            return AnswerWithCitations(question=question, answer="too late")
+
+    engine = ResearchEngine(
+        orchestrator=FakeOrchestrator(),
+        ai_service=SlowAIService(),
+        settings=Settings(cache_backend="memory", ai_timeout_seconds=0.01),
+    )
+
+    with pytest.raises(asyncio.TimeoutError):
+        await engine.research_async("Q", use_cache=False)

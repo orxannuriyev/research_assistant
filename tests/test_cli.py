@@ -37,3 +37,12 @@ def test_cli_renders_numbered_references() -> None:
     assert "An answer [1]." in rendered
     assert "[1] (web) A source" in rendered
     assert "https://example.test/source" in rendered
+
+def test_cli_renders_missing_answer() -> None:
+    assert render_answer(None) == (
+        "No answer could be produced because no sources were retrieved."
+    )
+
+def test_cli_rejects_unknown_source() -> None:
+    with pytest.raises(ValidationError, match="Unknown source"):
+        parse_args(["ask", "Q", "--sources", "reddit"])

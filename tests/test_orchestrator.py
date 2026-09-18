@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from ai.providers.base import ProviderError
 from ai.schemas import Source
 from src.config import Settings
 from src.concurrency import orchestrator as orchestrator_module
@@ -72,3 +73,39 @@ async def test_cached_source_avoids_fetch(monkeypatch) -> None:
 
     assert session.from_cache is True
     assert len(session.raw_sources) == 1
+
+@pytest.mark.asyncio
+async def test_source_fetch_retries_then_succeeds(monkeypatch) -> None:
+    settings = Settings(cache_backend="memory", source_timeout_seconds=0.2)
+    orchestrator = Orchestrator(CacheService(InMemoryCache(), settings), settings)
+    attempts = 0
+
+    async def flaky_fetch(query, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ProviderError("temporary source failure")
+        return [_source("wikipedia")]
+
+    monkeypatch.setattr(orchestrator_module, "fetch_wikipedia", flaky_fetch)
+    session = await orchestrator.fetch("photosynthesis", sources=["wikipedia"])
+
+    assert attempts == 2
+    assert len(session.raw_sources) == 1
+
+
+@pytest.mark.asyncio
+async def test_arxiv_requests_are_rate_limited(monkeypatch) -> None:
+    settings = Settings(cache_backend="memory", arxiv_min_interval_seconds=1.0)
+    orchestrator = Orchestrator(CacheService(InMemoryCache(), settings), settings)
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr(orchestrator_module.asyncio, "sleep", fake_sleep)
+    await orchestrator._wait_for_arxiv_slot("arxiv")
+    await orchestrator._wait_for_arxiv_slot("arxiv")
+
+    assert len(sleeps) == 1
+    assert sleeps[0] > 0

@@ -34,6 +34,12 @@ def test_memory_cache_respects_ttl() -> None:
     cache.set("wikipedia", "Q", _entry())
     assert cache.get("WIKIPEDIA", " q ") is not None
 
+def test_memory_cache_expires_entries() -> None:
+    backend = InMemoryCache()
+    backend.set("expired", _entry().model_copy(update={"expires_at": 1.0}))
+
+    assert backend.get("expired") is None
+
 
 def test_disabled_cache_bypasses_reads_and_writes() -> None:
     settings = Settings(cache_backend="memory")
@@ -48,3 +54,10 @@ def test_filesystem_cache_round_trips(tmp_path) -> None:
     restored = backend.get("abc")
     assert restored is not None
     assert restored.sources[0].title == "Photosynthesis"
+
+def test_filesystem_cache_removes_expired_entries(tmp_path) -> None:
+    backend = FilesystemCache(str(tmp_path))
+    backend.set("expired", _entry().model_copy(update={"expires_at": 1.0}))
+
+    assert backend.get("expired") is None
+    assert not (tmp_path / "expired.json").exists()
