@@ -48,6 +48,8 @@ class Orchestrator:
         self._cache = cache
         self._settings = settings
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_sources)
+        self._arxiv_rate_lock = asyncio.Lock()
+        self._last_arxiv_request = 0.0
 
     # ── public API ────────────────────────────────────────────────────────────
 
@@ -134,6 +136,7 @@ class Orchestrator:
                 )
                 async for attempt in retrying:
                     with attempt:
+                        await self._wait_for_arxiv_slot(source_name)
                         batch = await asyncio.wait_for(
                             self._call_fetcher(source_name, query, client),
                             timeout=self._settings.source_timeout_seconds,
@@ -154,6 +157,19 @@ class Orchestrator:
             self._cache.set(source_name, query, entry)
 
             return source_name, batch, False
+
+    async def _wait_for_arxiv_slot(self, source_name: str) -> None:
+        """Enforce the configured minimum interval between arXiv requests."""
+        if source_name != "arxiv":
+            return
+
+        async with self._arxiv_rate_lock:
+            now = time.monotonic()
+            elapsed = now - self._last_arxiv_request
+            delay = self._settings.arxiv_min_interval_seconds - elapsed
+            if self._last_arxiv_request and delay > 0:
+                await asyncio.sleep(delay)
+            self._last_arxiv_request = time.monotonic()
 
     @staticmethod
     async def _call_fetcher(

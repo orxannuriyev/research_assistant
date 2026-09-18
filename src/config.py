@@ -80,6 +80,16 @@ class Settings(BaseSettings):
         gt=0,
         description="Per-source HTTP timeout in seconds.",
     )
+    ai_timeout_seconds: float = Field(
+        default=30.0,
+        gt=0,
+        description="Maximum time allowed for one AI synthesis call.",
+    )
+    arxiv_min_interval_seconds: float = Field(
+        default=1.0,
+        ge=0,
+        description="Minimum interval between arXiv requests in one orchestrator.",
+    )
 
     # ── Logging ───────────────────────────────────────────────────────────────
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
