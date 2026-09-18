@@ -7,6 +7,10 @@ import logging
 import sys
 from collections.abc import Sequence
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from ai.schemas import AnswerWithCitations
 from src.engine import ResearchEngine
 from src.config import Settings
