@@ -26,7 +26,7 @@ COPY --from=builder /opt/venv /opt/venv
 COPY ai ./ai
 COPY data ./data
 COPY src ./src
-COPY demo_ai.py researcher.py .
+COPY api.py demo_ai.py researcher.py .
 
 RUN useradd --create-home --shell /bin/bash appuser \
 	&& mkdir -p /app/.cache \
