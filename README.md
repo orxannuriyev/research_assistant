@@ -68,12 +68,12 @@ python -m compileall -q ai src tests researcher.py
 python scripts/bench.py
 ```
 
-The benchmark requires live provider access. Parallel time should approach the slowest individual source rather than the sum of all three. The following values were measured locally with the command above; network latency and provider rate limits can change them.
+The benchmark requires live provider access. Parallel time should approach the slowest individual source rather than the sum of all three. The following values were measured locally with the command above. In this run, Wikipedia returned HTTP 403, so four source results were counted; timings and source counts vary with provider availability, network latency, and rate limits.
 
 | Mode | Sources | Time | Speedup |
 |---|---:|---:|---:|
-| Sequential | 2 | 2.20 s | 1.00x |
-| Parallel | 2 | 0.12 s | 17.62x |
+| Sequential | 4 | 3.03 s | 1.00x |
+| Parallel | 4 | 2.38 s | 1.28x |
 
 The exact values vary with network latency and provider rate limits.
 

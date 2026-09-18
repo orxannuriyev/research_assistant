@@ -74,6 +74,22 @@ async def test_cached_source_avoids_fetch(monkeypatch) -> None:
     assert session.from_cache is True
     assert len(session.raw_sources) == 1
 
+
+@pytest.mark.asyncio
+async def test_empty_source_results_are_not_cached(monkeypatch) -> None:
+    settings = Settings(cache_backend="memory")
+    cache = CacheService(InMemoryCache(), settings)
+    orchestrator = Orchestrator(cache, settings)
+
+    async def empty_fetch(query, **kwargs):
+        return []
+
+    monkeypatch.setattr(orchestrator_module, "fetch_wikipedia", empty_fetch)
+    session = await orchestrator.fetch("photosynthesis", sources=["wikipedia"])
+
+    assert session.raw_sources == []
+    assert cache.get("wikipedia", "photosynthesis") is None
+
 @pytest.mark.asyncio
 async def test_source_fetch_retries_then_succeeds(monkeypatch) -> None:
     settings = Settings(cache_backend="memory", source_timeout_seconds=0.2)

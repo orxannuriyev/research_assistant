@@ -4,7 +4,7 @@ import pytest
 
 from ai.schemas import AnswerWithCitations, Citation, Source
 from src.cli import parse_args, render_answer
-from src.validation import ValidationError
+from src.validation import ValidationError, normalize_search_query
 
 
 def test_cli_parses_sources_and_no_cache() -> None:
@@ -46,3 +46,9 @@ def test_cli_renders_missing_answer() -> None:
 def test_cli_rejects_unknown_source() -> None:
     with pytest.raises(ValidationError, match="Unknown source"):
         parse_args(["ask", "Q", "--sources", "reddit"])
+
+
+def test_search_query_removes_trailing_punctuation() -> None:
+    assert normalize_search_query("  What   is photosynthesis?! ") == (
+        "What is photosynthesis"
+    )

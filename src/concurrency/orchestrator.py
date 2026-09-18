@@ -89,7 +89,8 @@ class Orchestrator:
         start = time.monotonic()
 
         async with httpx.AsyncClient(
-            timeout=self._settings.source_timeout_seconds
+            timeout=self._settings.source_timeout_seconds,
+            follow_redirects=True,
         ) as client:
             tasks = [
                 self._fetch_one(name, question, client)
@@ -163,8 +164,9 @@ class Orchestrator:
                 return source_name, [], False
 
             # 3. Store in cache.
-            entry = CacheEntry(source=source_name, query=query, sources=batch)
-            self._cache.set(source_name, query, entry)
+            if batch:
+                entry = CacheEntry(source=source_name, query=query, sources=batch)
+                self._cache.set(source_name, query, entry)
 
             return source_name, batch, False
 

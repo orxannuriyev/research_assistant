@@ -12,7 +12,7 @@ from src.models import ResearchSession
 from src.services.ai_service import AIService
 from src.services.cache import CacheService
 from src.storage.cache_store import CacheBackend, FilesystemCache, InMemoryCache
-from src.validation import normalize_sources, validate_question
+from src.validation import normalize_search_query, normalize_sources, validate_question
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +57,15 @@ class ResearchEngine:
     ) -> ResearchSession:
         """Executes full research pipeline asynchronously."""
         clean_question = validate_question(question)
+        search_query = normalize_search_query(clean_question)
         target_sources = list(normalize_sources(sources))
         self.cache.enabled = use_cache
 
         session = await self.orchestrator.fetch(
-            clean_question,
+            search_query,
             sources=target_sources,
         )
+        session.question = clean_question
         if session.raw_sources:
             try:
                 session.answer = await asyncio.wait_for(

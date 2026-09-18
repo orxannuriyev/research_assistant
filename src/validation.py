@@ -16,6 +16,7 @@ _SOURCE_ALIASES = {
 }
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_SEARCH_TRAILING_PUNCTUATION = re.compile(r"[?!.,;:]+$")
 
 
 class ValidationError(ValueError):
@@ -83,3 +84,10 @@ def sanitize_output(text: str) -> str:
 
     cleaned = _CONTROL_CHARS.sub("", text)
     return cleaned.strip()
+
+
+def normalize_search_query(question: str) -> str:
+    """Prepare a clean query for external search providers."""
+    normalized = " ".join(question.strip().split())
+    normalized = _SEARCH_TRAILING_PUNCTUATION.sub("", normalized).strip()
+    return normalized

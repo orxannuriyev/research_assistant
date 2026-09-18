@@ -22,8 +22,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import httpx
+from dotenv import load_dotenv
 
 from ai import fetch_arxiv, fetch_web, fetch_wikipedia
+
+load_dotenv()
 
 QUERY = "transformer neural network attention mechanism"
 MAX_RESULTS = 2
@@ -61,7 +64,7 @@ async def parallel(client: httpx.AsyncClient) -> tuple[int, float]:
 async def main() -> None:
     print(f"Benchmark query: {QUERY!r}\n")
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
         seq_count, seq_time = await sequential(client)
         par_count, par_time = await parallel(client)
 
