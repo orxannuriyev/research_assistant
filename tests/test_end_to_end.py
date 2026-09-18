@@ -12,7 +12,11 @@ from src.models import ResearchSession
 
 
 class FakeOrchestrator:
+    def __init__(self) -> None:
+        self.received_question: str | None = None
+
     async def fetch(self, question: str, *, sources: list[str]) -> ResearchSession:
+        self.received_question = question
         return ResearchSession(
             question=question,
             sources_used=sources,
@@ -34,8 +38,9 @@ class FakeAIService:
 
 @pytest.mark.asyncio
 async def test_engine_runs_full_offline_pipeline() -> None:
+    orchestrator = FakeOrchestrator()
     engine = ResearchEngine(
-        orchestrator=FakeOrchestrator(),
+        orchestrator=orchestrator,
         ai_service=FakeAIService(),
         settings=Settings(cache_backend="memory"),
     )
@@ -47,6 +52,7 @@ async def test_engine_runs_full_offline_pipeline() -> None:
     )
 
     assert session.question == "What is photosynthesis?"
+    assert orchestrator.received_question == "What is photosynthesis"
     assert session.sources_used == ["wikipedia", "web"]
     assert session.answer is not None
     assert session.answer.answer == "Offline answer [1]."
