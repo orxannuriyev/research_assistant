@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 import logging
 from typing import Any, Callable
 
@@ -13,6 +12,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from ai.providers.base import ProviderError
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class AIRetryableError(AIServiceError):
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=4),
-    retry=retry_if_exception_type((AIRetryableError, AITimeoutError)),
+    retry=retry_if_exception_type((AIRetryableError, AITimeoutError, ProviderError)),
     reraise=True,
 )
 def _execute_with_retry(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
@@ -59,18 +59,33 @@ class AIService:
     """Wrapper service for AI operations with retry and robustness features."""
 
     def __init__(self, ai_client: Any = None) -> None:
-        if ai_client is None:
-            try:
-                from ai.providers import get_llm_provider
-                self.ai_client = get_llm_provider()
-            except Exception as e:
-                logger.warning(f"Could not initialize default LLM provider: {e}")
-                self.ai_client = None
-        else:
-            self.ai_client = ai_client
+        self.ai_client = ai_client
+
+    def synthesize(self, question: str, sources: list[Any]) -> Any:
+        """Synthesize a cited answer through the provided AI module."""
+        if not question or not question.strip():
+            raise AIServiceError("Question cannot be empty for AI generation.")
+        if not sources:
+            raise AIServiceError("At least one source is required for synthesis.")
+
+        from ai import synthesize as ai_synthesize
+
+        def _call() -> Any:
+            llm = self.ai_client
+            if llm is None:
+                return ai_synthesize(question, sources)
+            return ai_synthesize(question, sources, llm=llm)
+
+        try:
+            return _execute_with_retry(_call)
+        except AIServiceError:
+            raise
+        except Exception as exc:
+            logger.error("AI synthesis failed: %s", exc)
+            raise AIServiceError("AI synthesis failed.") from exc
 
     def summarize_and_answer(self, question: str, context: str) -> str:
-        """Summarizes research context and provides a structured answer to the question."""
+        """Retain the legacy text API for callers outside the research engine."""
         if not question or not question.strip():
             raise AIServiceError("Question cannot be empty for AI generation.")
 
@@ -87,27 +102,14 @@ class AIService:
                 return f"Gathered Research Context:\n\n{context}"
 
             try:
-                res = None
-                if hasattr(self.ai_client, "generate"):
-                    res = self.ai_client.generate(prompt)
-                elif hasattr(self.ai_client, "complete"):
+                if hasattr(self.ai_client, "complete"):
                     res = self.ai_client.complete(prompt)
-                elif hasattr(self.ai_client, "chat"):
-                    res = self.ai_client.chat(prompt)
-
-                # Async cavabları idarə etmək
-                if inspect.iscoroutine(res):
-                    try:
-                        res = asyncio.run(res)
-                    except RuntimeError:
-                        loop = asyncio.get_event_loop()
-                        res = loop.run_until_complete(res)
+                elif hasattr(self.ai_client, "generate"):
+                    res = self.ai_client.generate(prompt)
+                else:
+                    raise AIRetryableError("AI client has no completion method.")
 
                 if res:
-                    if hasattr(res, "text"):
-                        return res.text
-                    if hasattr(res, "content"):
-                        return res.content
                     return str(res)
 
                 raise AIRetryableError("AI client returned empty response.")

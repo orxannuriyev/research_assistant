@@ -64,6 +64,15 @@ class CacheService:
         self._settings = settings
         self._enabled = enabled
 
+    @property
+    def enabled(self) -> bool:
+        """Whether source cache reads and writes are active."""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool) -> None:
+        self._enabled = value
+
     # ── public API ────────────────────────────────────────────────────────────
 
     def get(self, source: str, query: str) -> Optional[CacheEntry]:

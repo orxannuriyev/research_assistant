@@ -19,10 +19,12 @@ from typing import Optional
 import httpx
 
 from ai import fetch_arxiv, fetch_web, fetch_wikipedia
+from ai.providers.base import ProviderError
 from ai.schemas import Source
 from src.config import Settings
 from src.models import CacheEntry, ResearchSession
 from src.services.cache import CacheService
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +124,20 @@ class Orchestrator:
 
             # 2. Live fetch with per-source timeout.
             try:
-                batch = await asyncio.wait_for(
-                    self._call_fetcher(source_name, query, client),
-                    timeout=self._settings.source_timeout_seconds,
+                retrying = AsyncRetrying(
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential(multiplier=0.25, min=0.25, max=2),
+                    retry=retry_if_exception_type(
+                        (asyncio.TimeoutError, ProviderError, httpx.HTTPError, OSError)
+                    ),
+                    reraise=True,
                 )
+                async for attempt in retrying:
+                    with attempt:
+                        batch = await asyncio.wait_for(
+                            self._call_fetcher(source_name, query, client),
+                            timeout=self._settings.source_timeout_seconds,
+                        )
             except asyncio.TimeoutError:
                 logger.warning(
                     "Source '%s' timed out after %.1fs — skipping.",

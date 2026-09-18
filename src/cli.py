@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from collections.abc import Sequence
 
+from ai.schemas import AnswerWithCitations
 from src.engine import ResearchEngine
+from src.config import Settings
 from src.validation import normalize_sources, validate_question
 
 
@@ -55,21 +58,39 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return args
 
 
+def render_answer(answer: AnswerWithCitations | None) -> str:
+    """Render an answer and its numbered citations for terminal users."""
+    if answer is None:
+        return "No answer could be produced because no sources were retrieved."
+
+    lines = [answer.answer]
+    if answer.citations:
+        lines.extend(["", "References:"])
+        for citation in answer.citations:
+            source = citation.source
+            lines.append(
+                f"[{citation.index}] ({source.origin}) {source.title}\n    {source.url}"
+            )
+    return "\n".join(lines)
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     """CLI entry point to execute research pipeline."""
     try:
         args = parse_args(argv)
         if args.command == "ask":
-            engine = ResearchEngine()
+            settings = Settings()
+            logging.basicConfig(level=getattr(logging, settings.log_level))
+            engine = ResearchEngine(settings=settings)
             result = engine.research(
                 question=args.question,
                 sources=args.sources,
                 use_cache=not args.no_cache,
             )
             print("\n=== RESEARCH ANSWER ===")
-            print(result.get("answer"))
+            print(render_answer(result.answer))
             print("\n=======================")
-            print(f"Sources used: {', '.join(result.get('sources', []))}")
+            print(f"Sources used: {', '.join(result.sources_used)}")
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
