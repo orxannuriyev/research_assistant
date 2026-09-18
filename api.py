@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
+from src.validation import ValidationError 
 from src.config import Settings
 from src.engine import ResearchEngine
 
