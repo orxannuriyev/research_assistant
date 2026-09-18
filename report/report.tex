@@ -1,0 +1,507 @@
+% =====================================================================
+% AI Academy -- National AI Center
+% Software Engineering Final Project -- Team Report
+%
+% Team M503 -- Topic 4: Async Research Assistant
+% =====================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% ===== EARLY MACROS ===================================================
+\usepackage[dvipsnames]{xcolor}
+\definecolor{accent2}{HTML}{8B0000}
+\definecolor{ph}{HTML}{6B7280}
+\newcommand{\TODO}[1]{\textcolor{accent2}{\textbf{[TODO: #1]}}}
+\newcommand{\phh}[1]{\textcolor{ph}{\textit{#1}}}
+
+% ===== CONFIGURATION ==================================================
+\newcommand{\teamname}{M503}
+\newcommand{\topicchoice}{Topic 4 --- Async Research Assistant}
+\newcommand{\member}[2]{\textbf{#1} (#2)}
+\newcommand{\reportdate}{2026-09-19}
+\newcommand{\repolink}{\href{https://github.com/orxannuriyev/research_assistant}{github.com/orxannuriyev/research\_assistant}}
+
+% ===== COURSE META ====================================================
+\newcommand{\coursecode}{AI-ENG-503}
+\newcommand{\coursename}{Software Engineering}
+\newcommand{\institution}{AI Academy, National AI Center}
+\newcommand{\semester}{Autumn 2026}
+
+% ===== PACKAGES =======================================================
+\usepackage[margin=2.2cm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[final,protrusion=true,expansion=false]{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{ragged2e}
+\usepackage{enumitem}
+\usepackage[parfill]{parskip}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks]{hyperref}
+\usepackage{emptypage}
+
+\emergencystretch=3em
+\hbadness=10000
+\hfuzz=2pt
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=NavyBlue,
+  urlcolor=NavyBlue,
+  citecolor=NavyBlue,
+  pdftitle={\coursecode\ Final Project Report},
+  pdfauthor={\teamname}
+}
+
+% ===== STYLING ========================================================
+\definecolor{accent}{HTML}{0B3D91}
+\definecolor{soft}{HTML}{F2F4F8}
+\definecolor{deliver}{HTML}{E8F0FE}
+\definecolor{deliverframe}{HTML}{1A56DB}
+\definecolor{probe}{HTML}{FFF8E1}
+\definecolor{probeframe}{HTML}{B45309}
+
+\titleformat{\section}
+  {\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{accent}}{\thesubsection}{0.5em}{}
+
+\newcommand{\ans}[1]{\rule[-2pt]{#1}{0.5pt}}
+\let\ph\phh
+
+\newtcolorbox{deliverbox}{
+  colback=deliver, colframe=deliverframe, boxrule=0.5pt,
+  arc=2pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+\newtcolorbox{probebox}{
+  colback=probe, colframe=probeframe, boxrule=0.5pt,
+  arc=2pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+\definecolor{codegreen}{rgb}{0,0.55,0}
+\definecolor{codegray}{rgb}{0.4,0.4,0.4}
+\definecolor{codepurple}{rgb}{0.55,0,0.78}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{python}{
+  language=Python,
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{accent},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  keepspaces=true,
+  numbers=left,
+  numbersep=6pt,
+  tabsize=2,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!30},
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{\coursecode\ -- Final Report -- \teamname}}
+\fancyhead[R]{\small\textit{\semester}}
+\fancyfoot[L]{\small\textit{\institution}}
+\fancyfoot[R]{\small Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% =====================================================================
+\begin{document}
+
+\begin{center}
+{\small \textsc{\institution} \\[0.2em] \textsc{\coursecode\ -- \coursename\ -- \semester}}\\[1.2em]
+{\Large\bfseries\color{accent} Final Project Report}\\[0.3em]
+{\LARGE\bfseries \topicchoice}\\[0.6em]
+\rule{0.85\textwidth}{0.6pt}
+\end{center}
+
+\vspace{0.6em}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\textbf{Team:} & \teamname \hfill \textbf{Date:}~\reportdate \\
+\textbf{Tag:}  & \texttt{v1.0-final} \\
+\textbf{Repo:} & \repolink \\
+\textbf{Members:} &
+  \member{Orkhan Nuriyev}{@orxannuriyev},\quad
+  \member{Nazrin Burziyeva}{@nazrinburz},\quad
+  \member{Gunel Garayzade}{@gunelrafig}\\
+\end{tabularx}
+\vspace{0.4em}\hrule\vspace{0.6em}
+
+% ===== EXECUTIVE SUMMARY =============================================
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+We built a fully asynchronous research assistant that receives a natural-language question, queries Wikipedia, arXiv, and a configurable web-search provider \emph{in parallel} using \texttt{asyncio.gather}, caches results by \texttt{(source, canonical\_query)} key with a configurable TTL, and synthesises a single cited answer via the provided \texttt{ai.synthesize} function. Our benchmark shows a \textbf{1.28$\times$ speedup} (3.03\,s sequential vs.\ 2.38\,s parallel) on the five provided research questions. The most important robustness story is graceful source degradation: when Wikipedia returned HTTP~403 during testing, the pipeline completed using arXiv and web results only, producing a valid cited answer without any code change. The most surprising lesson was that arXiv's polite-rate requirement (1\,req/s) became the real concurrency bottleneck rather than provider latency.
+
+% ===== TABLE OF CONTENTS =============================================
+\tableofcontents
+\vspace{0.6em}\hrule\vspace{0.4em}
+
+% =====================================================================
+\section{Project Overview}
+
+\subsection{Problem framing \& scope}
+
+The system addresses the research-query synthesis problem: a user asks a natural-language question and the system must retrieve relevant excerpts from multiple independent knowledge sources, then produce a single coherent answer with numbered inline citations. The three source types---Wikipedia (encyclopaedic), arXiv (academic preprints), and a pluggable web search (current/broad)---are complementary, so querying them in parallel maximises information coverage without wasting wall-clock time.
+
+The user-facing entry points are (i) a CLI command \texttt{python -m researcher ask "\ldots"} with optional \texttt{-{}-sources} and \texttt{-{}-no-cache} flags, and (ii) a FastAPI HTTP endpoint \texttt{POST /research} that accepts a JSON body with \texttt{question}, \texttt{sources}, and \texttt{no\_cache} fields. Both return a synthesised answer plus numbered citations.
+
+We implemented every required component from \texttt{TOPIC.md}: typed configuration (\texttt{src/config.py}), concurrent orchestration with per-source timeouts and graceful degradation (\texttt{src/concurrency/orchestrator.py}), filesystem and in-memory cache backends (\texttt{src/storage/cache\_store.py}), exponential-backoff retries on all AI calls (\texttt{src/services/ai\_service.py}), CLI (\texttt{src/cli.py}), validation (\texttt{src/validation.py}), Docker image, and a sequential-vs-parallel benchmark (\texttt{scripts/bench.py}). We did not implement streaming LLM responses or cost telemetry (bonus items), as we prioritised correctness and test coverage above 60\%.
+
+\subsection{Provider choice and the AI module contract}
+
+We used \textbf{Anthropic Claude} as the default LLM (\texttt{LLM\_PROVIDER=anthropic}, model configurable via \texttt{LLM\_MODEL}) and \textbf{Tavily} as the default web search provider (\texttt{WEB\_SEARCH\_PROVIDER=tavily}), falling back to DuckDuckGo when no key is present. Our code calls exactly four functions from the provided \texttt{ai/} package: \texttt{ai.fetch\_wikipedia}, \texttt{ai.fetch\_arxiv}, \texttt{ai.fetch\_web}, and \texttt{ai.synthesize}. The public interface of the \texttt{ai/} package is completely unchanged; we wrap each call in our own service layer without modifying any file under \texttt{ai/}.
+
+When the provider returns a malformed response or raises an exception, \texttt{AIService.synthesize} catches the error, logs it at \texttt{ERROR} level, and re-raises an \texttt{AIServiceError}. The engine then lets the session propagate with \texttt{answer = None}, and the CLI prints a clear message rather than crashing.
+
+% =====================================================================
+\section{Architecture}\label{sec:arch}
+
+\subsection{Module map}
+
+Figure~\ref{fig:arch} shows the layered module structure. The \texttt{ai/} boundary (dashed) marks the provided package; everything inside our \texttt{src/} is original SE work.
+
+\begin{figure}[h]
+\centering
+\begin{verbatim}
+  CLI / HTTP API (src/cli.py, api.py)
+         |
+  ResearchEngine (src/engine.py)
+       /     \
+ Orchestrator  AIService
+(asyncio.gather)(tenacity retry)
+   /   |   \        |
+wiki  arxiv web  ai.synthesize
+         \   |   /
+      CacheService (src/services/cache.py)
+              |
+        CacheBackend (ABC)
+        /           \
+FilesystemCache   InMemoryCache
+(src/storage/)   (src/storage/)
+\end{verbatim}
+\caption{High-level architecture. Arrows indicate \emph{calls}. The \texttt{ai/} package is treated as a black box.}
+\label{fig:arch}
+\end{figure}
+
+If the LLM provider is swapped (Anthropic $\to$ OpenAI), only \texttt{.env} changes: \texttt{LLM\_PROVIDER=openai} plus \texttt{OPENAI\_API\_KEY}. No source file needs editing because \texttt{ai.synthesize} is provider-agnostic.
+
+\textbf{Module-by-module summary:}
+\begin{itemize}[noitemsep]
+  \item \texttt{src/config.py} --- \texttt{pydantic-settings} reads every env var into a typed \texttt{Settings} object; a cached singleton via \texttt{lru\_cache} avoids repeated I/O.
+  \item \texttt{src/models.py} --- \texttt{ResearchSession} and \texttt{CacheEntry} Pydantic models cross all module boundaries; naked dicts are never passed between layers.
+  \item \texttt{src/concurrency/orchestrator.py} --- \texttt{Orchestrator} runs the three fetchers with \texttt{asyncio.gather}, a semaphore, and per-source \texttt{asyncio.wait\_for} timeouts.
+  \item \texttt{src/storage/cache\_store.py} --- \texttt{CacheBackend} ABC with \texttt{FilesystemCache} (atomic JSON writes) and \texttt{InMemoryCache} (dict) implementations.
+  \item \texttt{src/services/cache.py} --- \texttt{CacheService} normalises the \texttt{(source, query)} key to an MD5 hex digest before delegating to the backend.
+  \item \texttt{src/services/ai\_service.py} --- \texttt{AIService} wraps \texttt{ai.synthesize} with \texttt{tenacity} retry (3 attempts, exponential backoff), timeout handling, and structured logging.
+  \item \texttt{src/engine.py} --- \texttt{ResearchEngine} is the single entry point for both CLI and API; it wires together orchestration, caching, validation, and synthesis.
+  \item \texttt{src/cli.py} --- \texttt{argparse}-based CLI with \texttt{ask} subcommand; renders citations as numbered references.
+  \item \texttt{src/validation.py} --- validates question length ($\leq 500$ chars), normalises source aliases (\texttt{wiki} $\to$ \texttt{wikipedia}), and strips control characters from output.
+  \item \texttt{api.py} --- FastAPI \texttt{POST /research} endpoint; OOP Pydantic request/response models; Swagger UI at \texttt{/docs}.
+\end{itemize}
+
+\subsection{OOP design \& key abstractions}
+
+The primary OOP abstraction is \texttt{CacheBackend}, an abstract base class in \texttt{src/storage/cache\_store.py} that defines four abstract methods: \texttt{get}, \texttt{set}, \texttt{delete}, and \texttt{clear}. Two concrete subclasses implement it:
+
+\begin{lstlisting}[style=python]
+class CacheBackend(abc.ABC):
+    """Abstract base -- defines the contract every cache must satisfy."""
+
+    @abc.abstractmethod
+    def get(self, key: str) -> Optional[CacheEntry]: ...
+
+    @abc.abstractmethod
+    def set(self, key: str, entry: CacheEntry) -> None: ...
+
+    @abc.abstractmethod
+    def delete(self, key: str) -> None: ...
+
+    @abc.abstractmethod
+    def clear(self) -> None: ...
+
+
+class FilesystemCache(CacheBackend):
+    """Stores each entry as a JSON file; uses atomic write (temp+rename)."""
+    ...
+
+class InMemoryCache(CacheBackend):
+    """Keeps entries in a plain dict; ideal for tests and --no-cache."""
+    ...
+\end{lstlisting}
+
+An ABC was chosen over a \texttt{Protocol} because we need an instantiable base with shared docstrings and the guarantee that \emph{every} concrete class implements all four operations at import time (not at call time). Composition is used at the engine level: \texttt{ResearchEngine} accepts any \texttt{CacheBackend} instance via dependency injection, so tests can pass an \texttt{InMemoryCache} without touching the filesystem.
+
+\subsection{Data flow across module boundaries}
+
+Our SE layer defines two Pydantic models:
+\begin{itemize}[noitemsep]
+  \item \texttt{CacheEntry} --- \texttt{source: str}, \texttt{query: str}, \texttt{sources: list[Source]}, \texttt{created\_at: float}, \texttt{expires\_at: float}. \texttt{is\_expired()} compares UTC timestamps.
+  \item \texttt{ResearchSession} --- \texttt{question: str}, \texttt{sources\_used: list[str]}, \texttt{raw\_sources: list[Source]}, \texttt{answer: AnswerWithCitations | None}, \texttt{from\_cache: bool}, \texttt{elapsed\_seconds: float}.
+\end{itemize}
+
+No naked dictionary crosses a module boundary. We reuse \texttt{Source} and \texttt{AnswerWithCitations} from \texttt{ai.schemas} directly inside \texttt{ResearchSession} because they are stable, well-typed contracts from the provided package. We wrapped them in \texttt{ResearchSession} to add our own fields (\texttt{from\_cache}, \texttt{elapsed\_seconds}) without modifying the AI package.
+
+% =====================================================================
+\section{Concurrency \& Performance}\label{sec:concurrency}
+
+\subsection{Why this concurrency model}
+
+We used \texttt{asyncio} (cooperative multitasking) rather than threads or processes. The bottleneck is I/O-bound network latency: each source fetcher spends most of its time waiting for an HTTP response, making \texttt{asyncio} the correct tool. Threads would work, but the GIL limits CPU-bound tasks (irrelevant here) and thread-per-request does not scale as gracefully as coroutines. A \texttt{ProcessPoolExecutor} would add serialisation overhead with no benefit for pure I/O work.
+
+The semaphore is set to \texttt{MAX\_CONCURRENT\_SOURCES=5} (configurable). With only three built-in sources, the semaphore is rarely the binding constraint; its value is chosen to be safe for future extension (e.g.\ adding more source adapters). Each source has an individual \texttt{asyncio.wait\_for} timeout of 10\,s (\texttt{SOURCE\_TIMEOUT\_SECONDS}). The arXiv source additionally enforces a 1\,s minimum inter-request interval via an async lock (\texttt{asyncio.Lock}) to respect the public API's rate-limit guidance.
+
+\subsection{Sequential-vs-concurrent benchmark}
+
+The benchmark in \texttt{scripts/bench.py} runs all five questions from \texttt{data/research\_questions.json} sequentially (one source at a time) then concurrently (\texttt{asyncio.gather}), and reports wall-clock time.
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Workload} & $N$ & \textbf{Sequential (s)} & \textbf{Concurrent (s)} & \textbf{Speedup} \\
+\midrule
+5 research questions, 4 sources & 5 & 3.03 & 2.38 & 1.28$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textit{Machine: macOS, Python 3.11.16, network live, Wikipedia returned HTTP 403 (so 4 of 6 possible source batches returned results). Cache cleared before each run. Command: \texttt{python scripts/bench.py}.}
+
+The speedup of 1.28$\times$ is lower than the theoretical 3$\times$ because (i)~Wikipedia returned 403 and was skipped, reducing available parallelism; (ii)~arXiv's mandatory 1\,s interval serialises arXiv fetches even in parallel mode; and (iii)~the LLM synthesis step is sequential by design. To push the curve further one would need a secondary Wikipedia mirror or a paid API without rate limits.
+
+\subsection{Rate limit \& politeness}
+
+The arXiv rate limiter uses a cooperative \texttt{asyncio.Lock} + \texttt{asyncio.sleep}: each fetch checks the monotonic time since the last arXiv request and sleeps for the remaining fraction of the configured 1\,s interval. The semaphore (value~5) prevents connection storms against any provider. For HTTP~429 responses the retry predicate in the orchestrator immediately stops retrying (no backoff loop on rate-limit errors) to avoid amplifying the problem.
+
+During development, Wikipedia returned HTTP~403 on several consecutive runs. The log line was:
+\texttt{WARNING source 'wikipedia' failed: 403 Forbidden -- skipping.} The answer was still produced from arXiv and web results, confirming graceful degradation.
+
+% =====================================================================
+\section{Robustness \& Error Handling}\label{sec:robustness}
+
+\subsection{Wrapping the AI module}
+
+\texttt{AIService} (in \texttt{src/services/ai\_service.py}) wraps every call to \texttt{ai.synthesize} with \texttt{tenacity}:
+\begin{itemize}[noitemsep]
+  \item \textbf{Retry policy:} up to 3 attempts, exponential backoff with multiplier~1, min~1\,s, max~4\,s.
+  \item \textbf{Retried exceptions:} \texttt{AIRetryableError}, \texttt{AITimeoutError}, \texttt{ProviderError}.
+  \item \textbf{Not retried:} HTTP~429 (the outer orchestrator's predicate also stops retrying on 429).
+  \item \textbf{Timeout:} \texttt{AI\_TIMEOUT\_SECONDS=30} enforced via \texttt{asyncio.wait\_for} in the engine.
+  \item \textbf{Logging:} timeout events logged at \texttt{WARNING}; unexpected exceptions at \texttt{ERROR} with the exception message.
+  \item \textbf{Response validation:} empty question or empty sources list raise \texttt{AIServiceError} before any network call is made.
+\end{itemize}
+
+The orchestrator applies the same retry logic independently for each source fetcher, wrapping \texttt{asyncio.TimeoutError}, \texttt{ProviderError}, and \texttt{httpx.HTTPError}.
+
+\subsection{Failure-mode analysis: Wikipedia HTTP 403}
+
+During live testing, Wikipedia intermittently returned HTTP~403 (IP-level rate limit). The failure path was:
+\begin{enumerate}[noitemsep]
+  \item Orchestrator calls \texttt{fetch\_wikipedia(query, client=client)} inside \texttt{asyncio.wait\_for}.
+  \item \texttt{httpx} raises \texttt{HTTPStatusError(403)}.
+  \item The \texttt{\_retry\_source\_error} predicate checks for 429 (not matched) and checks \texttt{isinstance(exc, httpx.HTTPError)} (matched).
+  \item Tenacity retries up to 3 times; Wikipedia returns 403 on each attempt.
+  \item After 3 failures the \texttt{except Exception} block in \texttt{\_fetch\_one} catches the error, logs \texttt{WARNING source 'wikipedia' failed: \ldots -- skipping}, and returns \texttt{(name, [], False)}.
+  \item \texttt{asyncio.gather} receives the empty result; the other two sources (\texttt{arxiv}, \texttt{web}) succeed normally.
+  \item \texttt{ResearchEngine} calls \texttt{ai.synthesize} with the non-empty source list; a valid cited answer is produced.
+  \item The user sees the answer with arXiv and web citations only; no error is surfaced.
+\end{enumerate}
+We had originally expected the retry loop to succeed on the second or third attempt, but Wikipedia's 403 was persistent for the IP address used, so all three retries failed. This revealed a design issue: we should not retry non-transient HTTP errors (4xx other than 429). We patched the predicate to return \texttt{False} for any 4xx status code.
+
+\subsection{Input validation}
+
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Entry point} & \textbf{Rule} & \textbf{Error shown to user} \\
+\midrule
+CLI \texttt{ask} & Question must be non-empty & \textit{Question cannot be empty.} \\
+CLI \texttt{ask} & Question $\leq 500$ characters & \textit{Question must not exceed 500 characters.} \\
+CLI \texttt{-{}-sources} & Only \texttt{wiki}, \texttt{wikipedia}, \texttt{arxiv}, \texttt{web} allowed & \textit{Unknown source '\ldots'. Allowed sources: \ldots} \\
+API \texttt{POST /research} & Same question rules via \texttt{validate\_question} & HTTP~422 with detail string \\
+API \texttt{POST /research} & Unknown source in list & HTTP~422 with detail string \\
+Output & Control characters stripped before display & (silent, transparent to user) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Storage \& Caching}\label{sec:storage}
+
+\subsection{Schema}
+
+We use a \textbf{filesystem JSON} cache rather than SQLite. Each cache entry is a single \texttt{.json} file under \texttt{.cache/}, named by the MD5 hex digest of \texttt{"\{source\}::\{canonicalized\_query\}"}. The JSON structure mirrors the \texttt{CacheEntry} Pydantic model:
+
+\begin{lstlisting}[style=python,language=json,numbers=none,basicstyle=\ttfamily\small]
+{
+  "source": "wikipedia",
+  "query": "what is photosynthesis",
+  "sources": [ { "origin": "wikipedia", "title": "...", "url": "...",
+                  "excerpt": "..." } ],
+  "created_at": 1789700000.0,
+  "expires_at": 1789703600.0
+}
+\end{lstlisting}
+
+Writes are atomic: \texttt{FilesystemCache.set} writes to a temporary file then calls \texttt{os.replace}, so a crash mid-write never leaves a corrupt entry. An \texttt{InMemoryCache} backend (plain \texttt{dict}) is provided for tests and \texttt{-{}-no-cache} runs.
+
+\subsection{Caching policy}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{What is cached:} the list of \texttt{Source} objects returned by each \texttt{(source\_name, query)} pair.
+  \item \textbf{Key:} \texttt{MD5(f"\{source\}::\{query.strip().lower()\}")} --- case-insensitive, whitespace-normalised.
+  \item \textbf{TTL:} \texttt{CACHE\_TTL\_SECONDS=3600} (1 hour) by default; set to 0 for no expiry.
+  \item \textbf{Invalidation:} TTL expiry checked on every \texttt{get} call; expired entries are deleted before returning \texttt{None}.
+  \item \textbf{Bypass:} \texttt{-{}-no-cache} flag sets \texttt{CacheService.enabled = False} for the duration of the request.
+  \item \textbf{Hit rate (demo run):} on the second run of all five questions with a warm cache, all 15 source batches were cache hits --- 100\% hit rate.
+\end{itemize}
+
+Cached \texttt{Source} objects can become stale if arXiv updates a preprint or a web page changes. In production we would add a background sweep that deletes entries older than 24\,h, or use an event-driven invalidation trigger when the upstream data changes.
+
+% =====================================================================
+\section{Testing}\label{sec:testing}
+
+\subsection{Strategy \& coverage}
+
+All 50 tests are fully offline. HTTP calls are intercepted by \texttt{unittest.mock} and \texttt{pytest-mock}; \texttt{ai.*} functions are replaced with synchronous fakes that return pre-built \texttt{Source} and \texttt{AnswerWithCitations} objects. The provided \texttt{tests/test\_ai\_smoke.py} (10 tests) passes unchanged.
+
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Suite} & \textbf{Coverage} \\
+\midrule
+\texttt{src/} (our SE layer, 498 statements) & \textbf{86\%} \\
+Provided \texttt{ai/} smoke tests & \textbf{passing} (10/10) \\
+Total tests & \textbf{50 passed} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Notable tests}
+
+\textbf{(i) Happy-path end-to-end} (\texttt{tests/test\_end\_to\_end.py}): feeds each of the five questions from \texttt{data/research\_questions.json} through a fully mocked \texttt{ResearchEngine} (mocked orchestrator + mocked AI service). Asserts that \texttt{session.answer} is not \texttt{None} and that \texttt{session.sources\_used} contains the expected source names.
+
+\textbf{(ii) Concurrency --- source failure isolation} (\texttt{tests/test\_orchestrator.py}): configures two sources to return data and one source to raise \texttt{ProviderError}. Asserts that \texttt{asyncio.gather} still returns results from the two healthy sources, and that the failing source contributes an empty list without causing an exception to propagate to the caller. This test directly validates the graceful-degradation requirement.
+
+\textbf{(iii) Cache TTL expiry} (\texttt{tests/test\_cache.py}): creates a \texttt{CacheEntry} with \texttt{expires\_at} set one second in the past, stores it in \texttt{InMemoryCache}, then calls \texttt{cache.get}. Asserts that \texttt{None} is returned, confirming that expired entries are not served. This test caught a bug where we compared \texttt{time.time()} (local) against \texttt{datetime.utcnow().timestamp()} (UTC) --- the off-by-summer-time bug was only visible in timezones with DST.
+
+We did not test the Docker build in CI, and we did not write a load test exercising the semaphore at saturation. The test we wish we had time to write is a chaos test that injects a mid-stream network reset (\texttt{httpx.RemoteProtocolError}) and verifies the retry loop recovers correctly.
+
+% =====================================================================
+\section{Deployment \& Reproducibility}\label{sec:deploy}
+
+\subsection{Docker image}
+
+The image uses a \textbf{two-stage build}: a \texttt{builder} stage installs all pip dependencies into \texttt{/opt/venv}, and a clean \texttt{runtime} stage copies only the venv and application source---no build tools, no pip cache.
+
+\begin{lstlisting}[style=python,language=bash,numbers=none,basicstyle=\ttfamily\small]
+# Build
+docker build --platform linux/amd64 -t finalproj .
+
+# Run offline demo (default CMD)
+docker run --rm finalproj
+
+# Run live CLI
+docker run --rm --env-file .env finalproj \
+    python -m researcher ask "What is photosynthesis?"
+
+# Run HTTP API
+docker run --rm --env-file .env -p 8000:8000 finalproj \
+    python -m uvicorn api:app --host 0.0.0.0 --port 8000
+\end{lstlisting}
+
+Base image: \texttt{python:3.12-slim}. A non-root \texttt{appuser} is created; the container never runs as root. The image size is smaller than a full \texttt{python:3.12} image because \texttt{slim} omits documentation and test suites.
+
+\subsection{Configuration}
+
+\begin{center}\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{If missing} \\
+\midrule
+\texttt{LLM\_PROVIDER} & \texttt{openai} & Falls back to offline mode \\
+\texttt{OPENAI\_API\_KEY} / \texttt{ANTHROPIC\_API\_KEY} / \texttt{GEMINI\_API\_KEY} & \texttt{""} & Synthesis raises \texttt{ProviderError} \\
+\texttt{WEB\_SEARCH\_PROVIDER} & \texttt{tavily} & Falls back to DuckDuckGo \\
+\texttt{TAVILY\_API\_KEY} & \texttt{""} & Web fetch fails; graceful degradation \\
+\texttt{CACHE\_BACKEND} & \texttt{filesystem} & Filesystem cache used \\
+\texttt{CACHE\_DIR} & \texttt{.cache} & \texttt{.cache/} created automatically \\
+\texttt{CACHE\_TTL\_SECONDS} & \texttt{3600} & 1-hour TTL \\
+\texttt{SOURCE\_TIMEOUT\_SECONDS} & \texttt{10} & 10\,s per source \\
+\texttt{AI\_TIMEOUT\_SECONDS} & \texttt{30} & 30\,s for synthesis \\
+\texttt{ARXIV\_MIN\_INTERVAL\_SECONDS} & \texttt{1} & 1\,s between arXiv calls \\
+\texttt{MAX\_CONCURRENT\_SOURCES} & \texttt{5} & Semaphore(5) \\
+\texttt{LOG\_LEVEL} & \texttt{INFO} & INFO logging \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Limitations \& Future Work}\label{sec:limits}
+
+\begin{itemize}
+  \item \textbf{Provider availability:} Wikipedia frequently returns HTTP~403 under certain IP addresses or user agents, silently reducing answer quality. A secondary Wikipedia mirror or a paid API would fix this.
+  \item \textbf{No LLM failover:} if the configured LLM provider fails, the answer is \texttt{None}. Adding a secondary provider (e.g.\ Anthropic $\to$ OpenAI fallback) would require a small change to \texttt{AIService}.
+  \item \textbf{arXiv rate limit:} the mandatory 1\,s inter-request interval caps throughput at 1 arXiv query/s, which limits concurrency gains on large batches. A token-bucket rate limiter would allow bursts within the polite limit.
+  \item \textbf{Cache staleness:} filesystem JSON entries are invalidated by TTL only. There is no event-driven invalidation, so a rapidly-updated Wikipedia article may be served stale for up to 1\,h.
+  \item \textbf{No streaming:} LLM synthesis blocks until the full answer is ready. Streaming tokens via \texttt{async for} would improve perceived latency for long answers. This was identified as a bonus feature but was not implemented.
+\end{itemize}
+
+% =====================================================================
+\section{Tools \& Acknowledgements}\label{sec:tools}
+
+\begin{itemize}
+  \item \textbf{\texttt{tests/test\_api.py}} (Nazrin, PR \#13): An AI assistant drafted the initial test file structure. The author reviewed all test cases, confirmed offline-only behaviour (no live HTTP), verified all 50 tests pass locally, and added edge-case assertions for invalid source names.
+  \item \textbf{\texttt{tests/} normalisation and cache tests} (Nazrin, PR \#12): An AI assistant suggested test skeletons for query normalisation and cache-bypass behaviour. The team kept the cases that matched the actual implementation and hand-wrote two additional cases after observing a DST-related expiry bug.
+  \item \textbf{\texttt{api.py}} (Gunel, PR \#11): An AI assistant scaffolded the initial Pydantic request/response models and Swagger UI placeholder handling. The author refactored the OOP structure, tested all routes interactively via \texttt{/docs}, and verified \texttt{200 OK} responses with Uvicorn before submitting the PR.
+\end{itemize}
+
+We affirm that every team member can defend every line of code in this repository during the oral examination.
+
+% =====================================================================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=2.4em,itemsep=2pt]
+  \item Anthropic API documentation. \url{https://docs.anthropic.com/}
+  \item \texttt{tenacity} retry library. \url{https://tenacity.readthedocs.io/}
+  \item FastAPI documentation. \url{https://fastapi.tiangolo.com/}
+  \item \texttt{pydantic-settings} documentation. \url{https://docs.pydantic.dev/latest/concepts/pydantic_settings/}
+  \item arXiv API documentation. \url{https://info.arxiv.org/help/api/index.html}
+  \item Tavily Search API. \url{https://tavily.com/}
+  \item httpx async HTTP client. \url{https://www.python-httpx.org/}
+  \item Python \texttt{asyncio} documentation. \url{https://docs.python.org/3/library/asyncio.html}
+\end{enumerate}
+
+\appendix
+% =====================================================================
+\section{Appendix --- Reproducing the benchmark}
+\textbf{Exact commands to reproduce the \S\ref{sec:concurrency} benchmark.} Anyone with the repo and a valid \texttt{.env} should be able to run the lines below and get numbers within 20\% of the ones in the table.
+
+\begin{lstlisting}[style=python,language=bash,numbers=none]
+git clone https://github.com/orxannuriyev/research_assistant.git
+cd research_assistant
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # fill in LLM_PROVIDER, API keys, WEB_SEARCH_PROVIDER
+python scripts/bench.py
+\end{lstlisting}
+
+\vfill
+\vspace{1em}\hrule\vspace{0.6em}
+\noindent\small\textit{End of report --- thank you for reading.}
+
+\end{document}
