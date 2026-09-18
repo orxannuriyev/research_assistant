@@ -1,27 +1,126 @@
-# Research Assistant CLI
+# Topic 4: Async Research Assistant
 
-A modular Python CLI application that aggregates information from academic and web sources (Wikipedia, arXiv, DuckDuckGo, Tavily, Serper) and generates structured research summaries using LLM providers (Groq, OpenAI, Anthropic, Gemini).
+This project wraps the supplied `ai/` package with a software-engineering layer. A question is sent to Wikipedia, arXiv, and a configurable web-search provider concurrently; the excerpts are cached and synthesized into one answer with numbered citations.
 
----
+## Quick start
 
-##  Features
+```powershell
+py -3.11 -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+```
 
-* **Multi-Source Fetching:** Asynchronously retrieves context from Wikipedia, arXiv, and Web search providers.
-* **Flexible LLM Integration:** Supports Groq API (with automatic fallback to available models), OpenAI, Anthropic, and Google GenAI.
-* **Robust Error Handling:** Built-in retries, explicit timeouts, and custom HTTP header handling to prevent API blocks.
+The offline demo needs no API keys or network:
 
----
+```powershell
+python demo_ai.py --offline --limit 5
+pytest -q
+pytest --cov=src --cov-report=term-missing
+```
 
-## Setup & Installation
+The project uses Python 3.11 or newer. Python 3.11 is recommended because the pinned NumPy dependency has a compatible Windows wheel there.
 
-### 1. Clone & Setup Virtual Environment
+## Live CLI
 
-```bash
-git clone https://github.com/orxannuriyev/research_assistant.git
-cd research_assistant
+Set `LLM_PROVIDER`, its matching API key, and `WEB_SEARCH_PROVIDER` in `.env`, then run:
 
-python -m venv .venv
-# On Windows PowerShell:
-.\.venv\Scripts\Activate.ps1
-# On macOS/Linux:
-source .venv/bin/activate
+```powershell
+python -m researcher ask "What is photosynthesis?"
+python -m researcher ask "What is CRISPR?" --sources wiki,arxiv
+python -m researcher ask "Neural networks" --no-cache
+```
+
+The CLI prints the synthesized answer followed by only the numeric references used in the answer. `--no-cache` disables cache reads and writes for that request.
+
+## Configuration
+
+| Variable | Default | Purpose |
+|---|---:|---|
+| `LLM_PROVIDER` | `openai` | `openai`, `anthropic`, or `gemini` |
+| `LLM_MODEL` | provider default | Model identifier |
+| `WEB_SEARCH_PROVIDER` | `tavily` | `tavily`, `serper`, or `duckduckgo` |
+| `CACHE_BACKEND` | `filesystem` | `filesystem` or `memory` |
+| `CACHE_DIR` | `.cache` | Filesystem cache directory |
+| `CACHE_TTL_SECONDS` | `3600` | Cache lifetime; `0` means no expiry |
+| `SOURCE_TIMEOUT_SECONDS` | `10` | Timeout applied to each source |
+| `AI_TIMEOUT_SECONDS` | `30` | Timeout applied to AI synthesis |
+| `ARXIV_MIN_INTERVAL_SECONDS` | `1` | Minimum interval between arXiv requests |
+| `MAX_CONCURRENT_SOURCES` | `5` | Semaphore limit |
+| `LOG_LEVEL` | `INFO` | Logging level |
+
+Copy `.env.example` to `.env` for the provider key list. Never commit `.env`.
+
+## Architecture
+
+`ResearchEngine` owns the request workflow. `Orchestrator` runs source fetchers through `asyncio.gather`, per-source timeouts, `asyncio.Semaphore`, and an arXiv request interval limiter. `CacheService` canonicalizes source/query keys and delegates storage to the `CacheBackend` interface. `AIService` calls the provided `ai.synthesize` function with retry and exponential backoff; the engine applies an explicit AI timeout. See [docs/architecture.md](docs/architecture.md).
+
+The provided `ai/` package and `tests/test_ai_smoke.py` are unchanged contracts.
+
+## Tests and benchmark
+
+All project tests are offline. Run:
+
+```powershell
+pytest -q
+pytest --cov=src --cov-report=term-missing
+python -m compileall -q ai src tests researcher.py
+python scripts/bench.py
+```
+
+The benchmark requires live provider access. Parallel time should approach the slowest individual source rather than the sum of all three. The following values were measured locally with the command above; network latency and provider rate limits can change them.
+
+| Mode | Sources | Time | Speedup |
+|---|---:|---:|---:|
+| Sequential | 2 | 2.20 s | 1.00x |
+| Parallel | 2 | 0.12 s | 17.62x |
+
+The exact values vary with network latency and provider rate limits.
+
+## Docker
+
+The image runs the five-question offline demo by default:
+
+```powershell
+docker build --platform linux/amd64 -t finalproj .
+docker run --rm finalproj
+```
+
+For live research:
+
+```powershell
+docker run --rm --env-file .env finalproj python -m researcher ask "What is photosynthesis?"
+```
+
+## Project layout
+
+```text
+ai/                         provided AI module; do not modify
+src/config.py               typed environment settings
+src/models.py               CacheEntry and ResearchSession models
+src/concurrency/            async source orchestration
+src/services/               AI and cache services
+src/storage/                filesystem and memory cache backends
+src/engine.py               end-to-end application service
+src/cli.py                  argument parsing and citation rendering
+tests/                      offline project and provided smoke tests
+scripts/bench.py            sequential versus parallel benchmark
+docs/architecture.md        architecture diagram and flow
+artefacts/                  offline demo JSON outputs
+```
+
+## Submission deliverables
+
+Before creating the final tag, prepare these files or folders:
+
+- `report/report.pdf` generated from the course LaTeX template.
+- Slides PDF generated from the course Beamer template.
+- Signed contribution statement.
+- `artefacts/` containing the five offline demo answer JSON files.
+- A reviewed GitHub repository state and the final `v1.0-final` tag.
+
+## Known limitations
+
+- Live source fetches depend on third-party availability and rate limits.
+- A failed source is omitted; there is no secondary LLM failover yet.
+- The report, slides, and signed contribution statement still need to be prepared for submission.

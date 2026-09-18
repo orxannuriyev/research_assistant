@@ -32,6 +32,18 @@ logger = logging.getLogger(__name__)
 _SOURCES = ("wikipedia", "arxiv", "web")
 
 
+def _retry_source_error(retry_state: object) -> bool:
+    """Retry transient source failures, but stop immediately on HTTP 429."""
+    outcome = getattr(retry_state, "outcome", None)
+    exception = outcome.exception() if outcome is not None else None
+    if exception is None:
+        return False
+    response = getattr(exception, "response", None)
+    if getattr(response, "status_code", None) == 429 or "429" in str(exception):
+        return False
+    return isinstance(exception, (asyncio.TimeoutError, ProviderError, httpx.HTTPError, OSError))
+
+
 class Orchestrator:
     """Coordinates concurrent source fetching for a single research question.
 
@@ -48,6 +60,8 @@ class Orchestrator:
         self._cache = cache
         self._settings = settings
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_sources)
+        self._arxiv_rate_lock = asyncio.Lock()
+        self._last_arxiv_request = 0.0
 
     # ── public API ────────────────────────────────────────────────────────────
 
@@ -127,13 +141,12 @@ class Orchestrator:
                 retrying = AsyncRetrying(
                     stop=stop_after_attempt(3),
                     wait=wait_exponential(multiplier=0.25, min=0.25, max=2),
-                    retry=retry_if_exception_type(
-                        (asyncio.TimeoutError, ProviderError, httpx.HTTPError, OSError)
-                    ),
+                    retry=_retry_source_error,
                     reraise=True,
                 )
                 async for attempt in retrying:
                     with attempt:
+                        await self._wait_for_arxiv_slot(source_name)
                         batch = await asyncio.wait_for(
                             self._call_fetcher(source_name, query, client),
                             timeout=self._settings.source_timeout_seconds,
@@ -154,6 +167,19 @@ class Orchestrator:
             self._cache.set(source_name, query, entry)
 
             return source_name, batch, False
+
+    async def _wait_for_arxiv_slot(self, source_name: str) -> None:
+        """Enforce the configured minimum interval between arXiv requests."""
+        if source_name != "arxiv":
+            return
+
+        async with self._arxiv_rate_lock:
+            now = time.monotonic()
+            elapsed = now - self._last_arxiv_request
+            delay = self._settings.arxiv_min_interval_seconds - elapsed
+            if self._last_arxiv_request and delay > 0:
+                await asyncio.sleep(delay)
+            self._last_arxiv_request = time.monotonic()
 
     @staticmethod
     async def _call_fetcher(

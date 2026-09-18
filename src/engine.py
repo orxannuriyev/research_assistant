@@ -65,10 +65,21 @@ class ResearchEngine:
             sources=target_sources,
         )
         if session.raw_sources:
-            session.answer = self.ai_service.synthesize(
-                clean_question,
-                session.raw_sources,
-            )
+            try:
+                session.answer = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.ai_service.synthesize,
+                        clean_question,
+                        session.raw_sources,
+                    ),
+                    timeout=self.settings.ai_timeout_seconds,
+                )
+            except asyncio.TimeoutError:
+                logger.error(
+                    "AI synthesis timed out after %.1fs",
+                    self.settings.ai_timeout_seconds,
+                )
+                raise
         else:
             logger.warning("No sources retrieved for question=%r", clean_question)
         return session
