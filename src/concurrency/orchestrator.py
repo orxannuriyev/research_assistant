@@ -32,6 +32,18 @@ logger = logging.getLogger(__name__)
 _SOURCES = ("wikipedia", "arxiv", "web")
 
 
+def _retry_source_error(retry_state: object) -> bool:
+    """Retry transient source failures, but stop immediately on HTTP 429."""
+    outcome = getattr(retry_state, "outcome", None)
+    exception = outcome.exception() if outcome is not None else None
+    if exception is None:
+        return False
+    response = getattr(exception, "response", None)
+    if getattr(response, "status_code", None) == 429 or "429" in str(exception):
+        return False
+    return isinstance(exception, (asyncio.TimeoutError, ProviderError, httpx.HTTPError, OSError))
+
+
 class Orchestrator:
     """Coordinates concurrent source fetching for a single research question.
 
@@ -129,9 +141,7 @@ class Orchestrator:
                 retrying = AsyncRetrying(
                     stop=stop_after_attempt(3),
                     wait=wait_exponential(multiplier=0.25, min=0.25, max=2),
-                    retry=retry_if_exception_type(
-                        (asyncio.TimeoutError, ProviderError, httpx.HTTPError, OSError)
-                    ),
+                    retry=_retry_source_error,
                     reraise=True,
                 )
                 async for attempt in retrying:

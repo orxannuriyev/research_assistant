@@ -95,6 +95,24 @@ async def test_source_fetch_retries_then_succeeds(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_rate_limited_source_is_not_retried(monkeypatch) -> None:
+    settings = Settings(cache_backend="memory", source_timeout_seconds=0.2)
+    orchestrator = Orchestrator(CacheService(InMemoryCache(), settings), settings)
+    attempts = 0
+
+    async def rate_limited_fetch(query, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        raise ProviderError("HTTP 429 Too Many Requests")
+
+    monkeypatch.setattr(orchestrator_module, "fetch_wikipedia", rate_limited_fetch)
+    session = await orchestrator.fetch("photosynthesis", sources=["wikipedia"])
+
+    assert attempts == 1
+    assert session.raw_sources == []
+
+
+@pytest.mark.asyncio
 async def test_arxiv_requests_are_rate_limited(monkeypatch) -> None:
     settings = Settings(cache_backend="memory", arxiv_min_interval_seconds=1.0)
     orchestrator = Orchestrator(CacheService(InMemoryCache(), settings), settings)
