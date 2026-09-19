@@ -13,14 +13,8 @@ st.set_page_config(
 # SESSION STATE INITIALIZATION
 # ==========================================================
 
-if "selected_lang" not in st.session_state:
-    st.session_state.selected_lang = "Azərbaycan"
-
 if "user_query" not in st.session_state:
     st.session_state.user_query = ""
-
-if "last_lang" not in st.session_state:
-    st.session_state.last_lang = st.session_state.selected_lang
 
 # ==========================================================
 # CSS STYLING
@@ -88,20 +82,11 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* RADIO & CHECKBOX */
-    div[data-testid="stRadio"] label,
-    div[data-testid="stRadio"] label span,
+    /* CHECKBOX */
     div[data-testid="stCheckbox"] label,
     div[data-testid="stCheckbox"] label span,
-    div[data-testid="stRadio"] p,
-    div[data-testid="stRadio"] div,
     div[data-testid="stCheckbox"] p {
         color: #ffffff !important;
-    }
-
-    div[data-testid="stRadio"] div[role="radiogroup"] {
-        gap: 20px;
-        margin-bottom: 10px;
     }
 
     /* QUESTION INPUT */
@@ -157,18 +142,18 @@ st.markdown(
 
 with st.sidebar:
     selected_llm = st.selectbox(
-        "LLM Provider / LLM Provider",
+        "LLM Provider",
         ["openai", "gemini", "anthropic"],
         index=0,
     )
 
     st.markdown("---")
-    st.subheader("📚 Sources / Sources")
+    st.subheader("📚 Sources")
     use_web = st.checkbox("Web (Tavily)", value=False)
     use_wiki = st.checkbox("Wikipedia", value=False)
     use_arxiv = st.checkbox("Arxiv (Scientific papers)", value=False)
 
-# Sources list (Optional: if none selected, sends empty string or None)
+# Sources list
 sources_list = []
 if use_web:
     sources_list.append("web")
@@ -194,39 +179,15 @@ st.markdown(
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col2:
-    # LANGUAGE SELECTION
-    selected_lang = st.radio(
-        "Select language / Dil seçin",
-        ["Azərbaycan", "English"],
-        horizontal=True,
-        key="selected_lang",
-    )
-
-    if st.session_state.last_lang != selected_lang:
-        st.session_state.last_lang = selected_lang
-        st.session_state.user_query = ""
-        st.rerun()
-
-    if selected_lang == "Azərbaycan":
-        placeholder_text = "Sualınızı yazın və Enter düyməsini basın..."
-        button_text = "Axtar"
-        spinner_text = "Məlumatlar toplanır..."
-        results_title = "Nəticələr"
-        sources_title = "İstifadə olunan mənbələr və linklər:"
-        llm_label = "İstifadə olunan LLM:"
-        connection_error = "Backend serverinə qoşulmaq olmadı (Server işləmir)."
-        validation_error = "Validasiya xətası."
-        timeout_error = "Backend serverindən cavab almaq üçün gözləmə müddəti bitdi."
-    else:
-        placeholder_text = "Type your question and press Enter..."
-        button_text = "Search"
-        spinner_text = "Gathering data..."
-        results_title = "Results"
-        sources_title = "Sources and Links Used:"
-        llm_label = "LLM Used:"
-        connection_error = "Could not connect to the backend server."
-        validation_error = "Validation error."
-        timeout_error = "The backend request timed out."
+    placeholder_text = "Type your question and press Enter..."
+    button_text = "Search"
+    spinner_text = "Gathering data..."
+    results_title = "Results"
+    sources_title = "Sources and Links Used:"
+    llm_label = "LLM Used:"
+    connection_error = "Could not connect to the backend server."
+    validation_error = "Validation error."
+    timeout_error = "The backend request timed out."
 
     # FORM
     with st.form(key="search_form"):
@@ -249,8 +210,8 @@ if submit_triggered and query.strip():
         payload = {
             "question": query,
             "sources": sources_str,
-            "language": selected_lang,
             "llm_provider": selected_llm,
+            "no_cache": False,
         }
 
         try:
@@ -262,11 +223,7 @@ if submit_triggered and query.strip():
 
             if response.status_code == 200:
                 data = response.json()
-                default_no_ans = (
-                    "Cavab tapılmadı."
-                    if selected_lang == "Azərbaycan"
-                    else "No answer found."
-                )
+                default_no_ans = "No answer found."
                 answer = data.get("answer", default_no_ans)
                 st.write(answer)
 
@@ -290,12 +247,10 @@ if submit_triggered and query.strip():
                 except Exception:
                     error_detail = validation_error
 
-                err_prefix = "Xəta: " if selected_lang == "Azərbaycan" else "Error: "
-                st.error(f"{err_prefix}{error_detail}")
+                st.error(f"Error: {error_detail}")
 
             else:
-                err_prefix = "Xəta: " if selected_lang == "Azərbaycan" else "Error: "
-                st.error(f"{err_prefix}Unexpected status code from server: {response.status_code}")
+                st.error(f"Error: Unexpected status code from server: {response.status_code}")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -309,5 +264,4 @@ if submit_triggered and query.strip():
             st.error(timeout_error)
 
         except Exception as e:
-            err_prefix = "Xəta: " if selected_lang == "Azərbaycan" else "Error: "
-            st.error(f"{err_prefix}{e}")
+            st.error(f"Error: {e}")
