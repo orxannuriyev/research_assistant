@@ -25,3 +25,15 @@ htmlcov/
 # IDE directories
 .vscode/
 .idea/
+
+# LaTeX build artifacts
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.nav
+report/*.snm
+report/*.vrb
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
