@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
-from typing import List, Optional, Union
+from typing import List, Literal, Union
 from src.validation import ValidationError 
 from src.config import Settings
 from src.engine import ResearchEngine
@@ -10,8 +10,8 @@ app = FastAPI(title="Research Assistant API", version="1.0")
 
 class ResearchRequest(BaseModel):
     question: str
-    sources: Union[str, List[str], None] = "web, wikipedia, arxiv"  
-    llm_provider: Optional[str] = "openai"  
+    sources: Union[str, List[str], None] = "web, wikipedia, arxiv"
+    llm_provider: Literal["openai", "gemini", "anthropic"] | None = None
     no_cache: bool = False
 
     @field_validator("sources", mode="before")
@@ -30,6 +30,7 @@ class CitationResponse(BaseModel):
 class ResearchResponse(BaseModel):
     status: str
     question: str
+    llm_provider: str
     answer: str | None
     sources_used: list[str]
     citations: list[CitationResponse]
@@ -39,13 +40,11 @@ class ResearchResponse(BaseModel):
 def run_research(request: ResearchRequest):
     try:
         settings = Settings()
-        
-        # Override the LLM provider with the one selected from Streamlit UI
         if request.llm_provider:
             settings.llm_provider = request.llm_provider
 
         engine = ResearchEngine(settings=settings)
-        
+
         target_question = request.question
 
         # Execute the research process
@@ -78,6 +77,7 @@ def run_research(request: ResearchRequest):
         return ResearchResponse(
             status="success",
             question=request.question,
+            llm_provider=settings.llm_provider,
             answer=answer_text,
             sources_used=result.sources_used,
             citations=citations,
@@ -87,4 +87,4 @@ def run_research(request: ResearchRequest):
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc) or "Research provider failed.") from exc
+        raise HTTPException(status_code=502, detail="Research provider failed.") from exc

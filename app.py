@@ -1,5 +1,10 @@
+import os
+
 import requests
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ==========================================================
 # PAGE CONFIGURATION
@@ -141,10 +146,16 @@ st.markdown(
 # ==========================================================
 
 with st.sidebar:
+    configured_llm = os.getenv("LLM_PROVIDER", "openai")
+    provider_options = ["openai", "gemini", "anthropic"]
     selected_llm = st.selectbox(
         "LLM Provider",
-        ["openai", "gemini", "anthropic"],
-        index=0,
+        provider_options,
+        index=(
+            provider_options.index(configured_llm)
+            if configured_llm in provider_options
+            else 0
+        ),
     )
 
     st.markdown("---")
@@ -205,7 +216,10 @@ with col2:
 
 if submit_triggered and query.strip():
     with col2:
-        backend_url = "http://127.0.0.1:8000/research"
+        backend_url = os.getenv(
+            "RESEARCH_API_URL",
+            "http://127.0.0.1:8000/research",
+        )
 
         payload = {
             "question": query,
@@ -227,8 +241,8 @@ if submit_triggered and query.strip():
                 answer = data.get("answer", default_no_ans)
                 st.write(answer)
 
-                # Display the selected LLM provider
-                data_llm_used = selected_llm
+                # Display the provider confirmed by the backend
+                data_llm_used = data.get("llm_provider", selected_llm)
                 st.markdown(f"**{llm_label}** {data_llm_used}")
 
                 # Display citations with clickable links if available
@@ -236,10 +250,11 @@ if submit_triggered and query.strip():
                 if citations:
                     st.markdown(f"**{sources_title}**")
                     for cit in citations:
+                        index = cit.get("index", "?")
                         title = cit.get("title", "Source")
                         url = cit.get("url", "#")
                         origin = cit.get("origin", "web")
-                        st.markdown(f"- [{title}]({url}) *({origin})*")
+                        st.markdown(f"- [{index}] [{title}]({url}) *({origin})*")
 
             elif response.status_code == 422:
                 try:

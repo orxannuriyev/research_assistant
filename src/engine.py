@@ -35,7 +35,7 @@ class ResearchEngine:
         settings: Settings | None = None,
     ) -> None:
         self.settings = settings or Settings()
-        self.ai_service = ai_service or AIService()
+        self.ai_service = ai_service or AIService(provider=self.settings.llm_provider)
 
         if isinstance(cache_store, CacheService):
             cache = cache_store

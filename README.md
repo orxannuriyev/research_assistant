@@ -92,27 +92,83 @@ For live research:
 docker run --rm --env-file .env finalproj python -m researcher ask "What is photosynthesis?"
 ```
 
-To run and test the HTTP API locally without Docker:
+## HTTP API
+
+The optional FastAPI interface exposes `POST /research` and uses the same `ResearchEngine` as the CLI. It supports source selection, cache bypassing, citations, and the configured LLM provider.
+
+### Run locally
+
+Start the server from the repository root:
 
 ```powershell
 .\venv\Scripts\python.exe -m uvicorn api:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Open the interactive API documentation at `http://127.0.0.1:8000/docs`. From another PowerShell terminal, send a request with:
+Open the interactive documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). Example request body:
+
+```json
+{
+	"question": "What is photosynthesis?",
+	"sources": "wiki,arxiv",
+	"no_cache": true
+}
+```
+
+PowerShell request:
 
 ```powershell
 $body = @{ question = "What is photosynthesis?"; sources = "wiki,arxiv"; no_cache = $true } | ConvertTo-Json
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/research" -Method Post -ContentType "application/json" -Body $body
 ```
 
-To run the HTTP API in Docker:
+The API returns the answer, source names, elapsed time, and structured citations. Invalid source names return HTTP 422; provider failures return HTTP 502.
+
+Run the offline API tests without starting a server:
+
+```powershell
+.\venv\Scripts\python.exe -m pytest tests/test_api.py -q
+```
+
+### Run in Docker
+
+The default container command remains the offline CLI demo. To start the API instead:
 
 ```powershell
 docker run --rm --env-file .env -p 8000:8000 finalproj `
 	python -m uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
-Open the interactive API documentation at `http://127.0.0.1:8000/docs`.
+Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). If port 8000 is busy, map another host port, for example `-p 8001:8000`.
+
+## Streamlit UI
+
+The Streamlit frontend is in `app.py` and calls the FastAPI backend. Start the API first, then launch the UI in a second terminal:
+
+```powershell
+.\venv\Scripts\python.exe -m uvicorn api:app --host 127.0.0.1 --port 8000
+.\venv\Scripts\python.exe -m streamlit run app.py
+```
+
+Open the UI at [http://localhost:8501](http://localhost:8501). The sidebar lets you choose the LLM provider and sources.
+
+For a Docker setup, run the API and UI as separate containers on one Docker network:
+
+```powershell
+docker network create research-net
+docker run --rm --name research-api --network research-net --env-file .env finalproj `
+	python -m uvicorn api:app --host 0.0.0.0 --port 8000
+```
+
+In another terminal, run the UI container with the API URL pointing at the API container:
+
+```powershell
+docker run --rm --name research-ui --network research-net `
+	-e RESEARCH_API_URL=http://research-api:8000/research `
+	-p 8501:8501 finalproj `
+	python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+```
+
+Open [http://localhost:8501](http://localhost:8501). Stop both commands with `Ctrl+C`; remove the network afterward with `docker network rm research-net`.
 
 ## Project layout
 
@@ -125,24 +181,16 @@ src/services/               AI and cache services
 src/storage/                filesystem and memory cache backends
 src/engine.py               end-to-end application service
 src/cli.py                  argument parsing and citation rendering
+api.py                      optional FastAPI HTTP interface
+app.py                      Streamlit frontend for the HTTP API
 tests/                      offline project and provided smoke tests
 scripts/bench.py            sequential versus parallel benchmark
 docs/architecture.md        architecture diagram and flow
+docs/architecture.svg       reusable architecture diagram image
 artefacts/                  offline demo JSON outputs
 ```
-
-## Submission deliverables
-
-Before creating the final tag, prepare these files or folders:
-
-- `report/report.pdf` generated from the course LaTeX template.
-- Slides PDF generated from the course Beamer template.
-- Signed contribution statement.
-- `artefacts/` containing the five offline demo answer JSON files.
-- A reviewed GitHub repository state and the final `v1.0-final` tag.
 
 ## Known limitations
 
 - Live source fetches depend on third-party availability and rate limits.
 - A failed source is omitted; there is no secondary LLM failover yet.
-- The report, slides, and signed contribution statement still need to be prepared for submission.
