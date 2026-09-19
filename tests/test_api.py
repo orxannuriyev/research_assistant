@@ -57,11 +57,30 @@ def test_api_returns_typed_citations_and_normalized_sources(monkeypatch) -> None
     assert response.status_code == 200
     body = response.json()
     assert body["question"] == "  What   is AI? "
+    assert body["llm_provider"] == "openai"
     assert body["sources_used"] == ["wikipedia", "web"]
     assert body["citations"][0]["url"] == "https://example.test/source"
     assert fake_engine.received_question == "  What   is AI? "
     assert fake_engine.received_sources == "wiki,web"
     assert fake_engine.received_cache is False
+
+
+def test_api_forwards_selected_llm_provider(monkeypatch) -> None:
+    fake_engine = FakeEngine()
+    captured_settings: dict[str, str] = {}
+
+    def build_engine(settings):
+        captured_settings["provider"] = settings.llm_provider
+        return fake_engine
+
+    monkeypatch.setattr(api, "ResearchEngine", build_engine)
+    response = TestClient(api.app).post(
+        "/research",
+        json={"question": "Q", "llm_provider": "gemini"},
+    )
+
+    assert response.status_code == 200
+    assert captured_settings["provider"] == "gemini"
 
 
 def test_api_uses_default_sources(monkeypatch) -> None:

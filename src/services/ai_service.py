@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import threading
 from typing import Any, Callable
 
 from tenacity import (
@@ -15,6 +17,7 @@ from tenacity import (
 from ai.providers.base import ProviderError
 
 logger = logging.getLogger(__name__)
+_provider_lock = threading.Lock()
 
 
 class AIServiceError(Exception):
@@ -58,8 +61,9 @@ def _execute_with_retry(func: Callable[..., Any], *args: Any, **kwargs: Any) -> 
 class AIService:
     """Wrapper service for AI operations with retry and robustness features."""
 
-    def __init__(self, ai_client: Any = None) -> None:
+    def __init__(self, ai_client: Any = None, provider: str | None = None) -> None:
         self.ai_client = ai_client
+        self.provider = provider
 
     def synthesize(self, question: str, sources: list[Any]) -> Any:
         """Synthesize a cited answer through the provided AI module."""
@@ -73,7 +77,20 @@ class AIService:
         def _call() -> Any:
             llm = self.ai_client
             if llm is None:
-                return ai_synthesize(question, sources)
+                if self.provider is None:
+                    return ai_synthesize(question, sources)
+                from ai.providers.factory import get_llm
+
+                with _provider_lock:
+                    previous = os.environ.get("LLM_PROVIDER")
+                    os.environ["LLM_PROVIDER"] = self.provider
+                    try:
+                        return ai_synthesize(question, sources, llm=get_llm())
+                    finally:
+                        if previous is None:
+                            os.environ.pop("LLM_PROVIDER", None)
+                        else:
+                            os.environ["LLM_PROVIDER"] = previous
             return ai_synthesize(question, sources, llm=llm)
 
         try:
