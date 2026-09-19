@@ -270,6 +270,7 @@ if submit_triggered and query.strip():
         answer = data.get("answer", default_no_ans)
         st.write(answer)
 
+
         # Seçilmiş LLM provayderini göstəririk
         st.markdown(f"**{llm_label}** {selected_llm}")
 

@@ -1,0 +1,26 @@
+{
+  "source": "web",
+  "query": "Python programming (Please write the answer in English.)",
+  "sources": [
+    {
+      "title": "Python (programming language) - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+      "snippet": "Python logo\nicon\n\nPython is a high-level, general-purpose programming language that emphasizes code readability, simplicity, and ease-of-writing with the use of significant indentation, an extensive (\"batteries-included\") standard library, and garbage collection \"Garbage collection (computer science)\"). Python supports multiple programming paradigms but with an emphasis on object-oriented programming and dynamic typing. [...] Python is a multi-paradigm programming language. Object-oriented programming and structured programming are fully supported, and many of their features support functional programming and aspect-oriented programming – including metaprogramming and metaobjects. Many other paradigms are supported via extensions, including design by contract and logic programming. Python is often referred to as a ‘glue language’ because it is purposely designed to be able to integrate components written in other [...] Python's design offers some support for functional programming in the \"Lisp \"Lisp (programming language)\") tradition\". It has `filter`, `map`, and `reduce` functions; list comprehensions, dictionaries, sets \"Set (mathematics)\"), and generator \"Generator (computer programming)\") expressions. The standard library has two modules (`itertools` and `functools`) that implement functional tools borrowed from Haskell and Standard ML.\n\n`filter`\n`map`\n`reduce`\n`itertools`\n`functools`",
+      "origin": "web"
+    },
+    {
+      "title": "What Is Python? the Programming Language, Explained",
+      "url": "https://www.businessinsider.com/what-is-python",
+      "snippet": "Like most programming languages, Python works in tandem with an interpreter that executes the finalized lines of codes. There are lots of free resources to learn the Python coding language, which, with its basis in English syntax, is considered one of the least fussy and most straightforward coding languages to learn and read. [...] Python is a multipurpose programming language, and it has applicability pretty much anywhere that uses data, mathematical computation, or lines of code. That means unlike Java, for instance, Python isn't confined to being used for web development. [...] Python is a programming language that boasts some of the best versatility among its fellow coding counterparts, including Ruby and Swift.\n\nIn fact, you can even use Python to expedite tedious tasks in the JavaScript-based game, \"Minecraft.\"\n\nBut if you're confused about what Python is exactly and why it's so beloved by coders, from startup business owners to Redditors, here's your beginner's guide to Python, including who uses it, and why it's so often a preferred programming language.",
+      "origin": "web"
+    },
+    {
+      "title": "What Is Python? the Programming Language, Explained",
+      "url": "https://www.businessinsider.com/reference/what-is-python",
+      "snippet": "Like most programming languages, Python works in tandem with an interpreter that executes the finalized lines of codes. There are lots of free resources to learn the Python coding language, which, with its basis in English syntax, is considered one of the least fussy and most straightforward coding languages to learn and read. [...] Python is a multipurpose programming language, and it has applicability pretty much anywhere that uses data, mathematical computation, or lines of code. That means unlike Java, for instance, Python isn't confined to being used for web development. [...] Python is a programming language that boasts some of the best versatility among its fellow coding counterparts, including Ruby and Swift.\n\nIn fact, you can even use Python to expedite tedious tasks in the JavaScript-based game, \"Minecraft.\"\n\nBut if you're confused about what Python is exactly and why it's so beloved by coders, from startup business owners to Redditors, here's your beginner's guide to Python, including who uses it, and why it's so often a preferred programming language.",
+      "origin": "web"
+    }
+  ],
+  "created_at": 1789805636.906248,
+  "expires_at": 1789892036.906248
+}

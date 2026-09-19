@@ -1,0 +1,26 @@
+{
+  "source": "arxiv",
+  "query": "NewYork (Zəhmət olmasa cavabı yalnız Azərbaycan dilində yazın.)",
+  "sources": [
+    {
+      "title": "An attractive $φ^4$ theory in light-front coordinates",
+      "url": "http://arxiv.org/abs/1812.09555v2",
+      "snippet": "We study an attractive $φ^4$ interaction using Tamm-Dancoff truncation with light-front coordinates in $3+1$ dimensions. The truncated theory requires a coupling constant renormalization, we compute its $β$ function non-perturbatively, show that the model is asymptotically free, and find the corresponding Callan-Symanzik equations. The model supports bound states, we find the wave function for the ground state of the two-particle sector. We also give a bound for the $N$-particle ground state energy within a mean field approximation, including the corresponding result for the case of $2+1$ dimensions where the model does not require renormalization.",
+      "origin": "arxiv"
+    },
+    {
+      "title": "Dynamics and proliferation of turbulent stripes in plane-Poiseuille and plane-Couette flows",
+      "url": "http://arxiv.org/abs/2212.12406v3",
+      "snippet": "The first long-lived turbulent structures observable in planar shear flows take the form of localized stripes, inclined with respect to the mean flow direction. The dynamics of these stripes are central to transition, and recent studies proposed an analogy to directed percolation where the stripes' proliferation is ultimately responsible for turbulence to become sustained. In the present study we focus on the internal stripe dynamics as well as on the eventual stripe expansion, and we compare the underlying mechanisms in pressure and shear driven planar flows, respectively plane-Poiseuille and plane-Couette flow. Despite the similarities of the overall laminar-turbulence patterns, the stripe proliferation processes in the two cases are fundamentally different. Starting from the growth and sustenance of individual stripes, we find that in plane-Couette flow new streaks are created stochastically throughout the stripe whereas in plane-Poiseuille flow streak creation is deterministic and occurs locally at the downstream tip. Because of the up/downstream symmetry, Couette stripes, in contrast to Poiseuille stripes, have two weak and two strong laminar turbulent interfaces. These differences in symmetry as well as in internal growth give rise to two fundamentally different stripe splitting mechanisms. In plane-Poiseuille flow splitting is connected to the elongational growth of the original stripe, and it results from a break-off / shedding of the stripe's tail. In plane-Couette flow splitting follows from a broadening of the original stripe and a division along the stripe into two slimmer stripes.",
+      "origin": "arxiv"
+    },
+    {
+      "title": "Coarse graining the state space of a turbulent flow using periodic orbits",
+      "url": "http://arxiv.org/abs/2007.02584v3",
+      "snippet": "We show that turbulent dynamics that arise in simulations of the three-dimensional Navier--Stokes equations in a triply-periodic domain under sinusoidal forcing can be described as transient visits to the neighborhoods of unstable time-periodic solutions. Based on this description, we reduce the original system with more than $10^5$ degrees of freedom to a 17-node Markov chain where each node corresponds to the neighborhood of a periodic orbit. The model accurately reproduces long-term averages of the system's observables as weighted sums over the periodic orbits.",
+      "origin": "arxiv"
+    }
+  ],
+  "created_at": 1789805717.267812,
+  "expires_at": 1789892117.267812
+}

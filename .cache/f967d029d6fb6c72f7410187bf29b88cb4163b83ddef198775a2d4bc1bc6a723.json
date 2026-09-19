@@ -1,0 +1,26 @@
+{
+  "source": "web",
+  "query": "sdfgh (Zəhmət olmasa cavabı yalnız Azərbaycan dilində yazın.)",
+  "sources": [
+    {
+      "title": "\"zəhmət olmasa\" sözünün ingilis dilinə tərcüməsi",
+      "url": "https://az.glosbe.com/az/en/z%C9%99hm%C9%99t%20olmasa",
+      "snippet": "please \"zəhmət olmasa\" sözünün ingilis dilinə tərcüməsidir. Tərcümə edilmiş cümlə nümunəsi: Limonlu çay, zəhmət olmasa. ↔ A tea with lemon, please.",
+      "origin": "web"
+    },
+    {
+      "title": "Tərcümə",
+      "url": "https://translate.google.com?hl=az&eotf=0&sl=en&tl=az",
+      "snippet": "Ödənişsiz təklif olunan Google xidməti sözləri, ifadələri və veb səhifələri ingiliscə və 100-dən çox başqa dil arasında dərhal tərcümə edir.",
+      "origin": "web"
+    },
+    {
+      "title": "YouTube",
+      "url": "https://www.youtube.com/watch?v=WTZcdMovnm8",
+      "snippet": "Share your videos with friends, family, and the world.",
+      "origin": "web"
+    }
+  ],
+  "created_at": 1789805287.734823,
+  "expires_at": 1789891687.734823
+}
