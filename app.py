@@ -106,25 +106,25 @@ st.markdown(
 
     /* QUESTION INPUT */
     div[data-testid="stTextInput"] div[data-baseweb="base-input"] {
-        background: transparent !important;
+        background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 10px !important;
     }
 
     div[data-testid="stTextInput"] input {
-        color: #ffffff !important;
+        color: #0f172a !important;
         font-size: 1.1rem !important;
     }
 
     div[data-testid="stTextInput"] input::placeholder {
-        color: #cbd5e1 !important;
+        color: #64748b !important;
         opacity: 0.8 !important;
     }
 
     /* SEARCH BUTTON */
     div[data-testid="stFormSubmitButton"] button {
-        background: transparent !important;
-        color: white !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 10px !important;
         padding: 8px 24px !important;
@@ -134,7 +134,7 @@ st.markdown(
     }
 
     div[data-testid="stFormSubmitButton"] button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
+        background: #f1f5f9 !important;
         border-color: white !important;
     }
 
@@ -164,11 +164,11 @@ with st.sidebar:
 
     st.markdown("---")
     st.subheader("📚 Sources / Sources")
-    use_web = st.checkbox("Web (Tavily)", value=True)
+    use_web = st.checkbox("Web (Tavily)", value=False)
     use_wiki = st.checkbox("Wikipedia", value=False)
     use_arxiv = st.checkbox("Arxiv (Scientific papers)", value=False)
 
-# Format selected sources for the backend
+# Sources list (Optional: if none selected, sends empty string or None)
 sources_list = []
 if use_web:
     sources_list.append("web")
@@ -177,7 +177,7 @@ if use_wiki:
 if use_arxiv:
     sources_list.append("arxiv")
 
-sources_str = ", ".join(sources_list) if sources_list else "web"
+sources_str = ", ".join(sources_list) if sources_list else None
 
 # ==========================================================
 # TITLE
@@ -212,7 +212,7 @@ with col2:
         button_text = "Axtar"
         spinner_text = "Məlumatlar toplanır..."
         results_title = "Nəticələr"
-        sources_title = "İstifadə olunan mənbələr:"
+        sources_title = "İstifadə olunan mənbələr və linklər:"
         llm_label = "İstifadə olunan LLM:"
         connection_error = "Backend serverinə qoşulmaq olmadı (Server işləmir)."
         validation_error = "Validasiya xətası."
@@ -222,7 +222,7 @@ with col2:
         button_text = "Search"
         spinner_text = "Gathering data..."
         results_title = "Results"
-        sources_title = "Sources Used:"
+        sources_title = "Sources and Links Used:"
         llm_label = "LLM Used:"
         connection_error = "Could not connect to the backend server."
         validation_error = "Validation error."
@@ -271,13 +271,18 @@ if submit_triggered and query.strip():
                 st.write(answer)
 
                 # Display the selected LLM provider
-                st.markdown(f"**{llm_label}** {selected_llm}")
+                data_llm_used = selected_llm
+                st.markdown(f"**{llm_label}** {data_llm_used}")
 
-                sources_used = data.get("sources_used", sources_list)
-                if sources_used:
+                # Display citations with clickable links if available
+                citations = data.get("citations", [])
+                if citations:
                     st.markdown(f"**{sources_title}**")
-                    for source in sources_used:
-                        st.markdown(f"- {source}")
+                    for cit in citations:
+                        title = cit.get("title", "Source")
+                        url = cit.get("url", "#")
+                        origin = cit.get("origin", "web")
+                        st.markdown(f"- [{title}]({url}) *({origin})*")
 
             elif response.status_code == 422:
                 try:
