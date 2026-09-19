@@ -46,8 +46,7 @@ def run_research(request: ResearchRequest):
 
         engine = ResearchEngine(settings=settings)
         
-        # Add English instruction for AI
-        target_question = f"{request.question}\n\n(Please write the answer in English.)"
+        target_question = request.question
 
         # Execute the research process
         result = engine.research(
