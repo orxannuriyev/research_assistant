@@ -4,6 +4,10 @@ The application keeps the supplied `ai/` package unchanged and adds an engineeri
 
 ## Component diagram
 
+![Topic 4 architecture diagram](architecture.svg)
+
+Use this same `docs/architecture.svg` asset in the README, report, and slides so every deliverable shows one consistent architecture.
+
 ```mermaid
 flowchart TD
     CLI[CLI: python -m researcher] --> Engine[ResearchEngine]
