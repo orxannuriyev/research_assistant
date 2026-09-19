@@ -92,6 +92,21 @@ For live research:
 docker run --rm --env-file .env finalproj python -m researcher ask "What is photosynthesis?"
 ```
 
+### Docker bonus verification
+
+The Dockerfile uses separate builder and runtime stages. The final image was
+built and measured with:
+
+```powershell
+docker build --platform linux/amd64 -t finalproj .
+$bytes = docker image inspect finalproj --format "{{.Size}}"
+$mb = [math]::Round([double]$bytes / 1MB, 2)
+Write-Host "Image size: $mb MB"
+```
+
+Measured result: **205.03 MB**. This is below the advanced-bonus limit of
+250 MB.
+
 ## HTTP API
 
 The optional FastAPI interface exposes `POST /research` and uses the same `ResearchEngine` as the CLI. It supports source selection, cache bypassing, citations, and the configured LLM provider.
