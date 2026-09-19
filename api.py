@@ -12,7 +12,7 @@ class ResearchRequest(BaseModel):
     question: str
     sources: Union[str, List[str], None] = "web, wikipedia, arxiv"  
     language: Optional[Literal["Azərbaycan", "English"]] = "Azərbaycan"  
-    llm_provider: Optional[str] = "openai"  # Streamlit-dən gələn sahəni qarşılamaq üçün əlavə olundu
+    llm_provider: Optional[str] = "openai"  # Added to handle the field coming from Streamlit
     no_cache: bool = False
 
     @field_validator("sources", mode="before")
@@ -43,21 +43,21 @@ def run_research(request: ResearchRequest):
         settings = Settings()
         engine = ResearchEngine(settings=settings)
         
-        # Seçilmiş dilə uyğun olaraq AI üçün təlimatın əlavə edilməsi
+        # Add instruction for AI based on the selected language
         target_question = request.question
         if request.language == "Azərbaycan":
             target_question = f"{request.question}\n\n(Zəhmət olmasa cavabı yalnız Azərbaycan dilində yazın.)"
         elif request.language == "English":
             target_question = f"{request.question}\n\n(Please write the answer in English.)"
 
-        # Tədqiqat prosesinin icrası
+        # Execute the research process
         result = engine.research(
             question=target_question,
             sources=request.sources,
             use_cache=not request.no_cache,
         )
         
-        # Cavab mətninin təyini
+        # Determine the answer text
         if result.answer:
             answer_text = result.answer.answer
         else:
@@ -67,7 +67,7 @@ def run_research(request: ResearchRequest):
                 else "No answer could be produced because no sources were retrieved."
             )
         
-        # İstinadların formatlanması
+        # Format citations
         citations = []
         if result.answer and result.answer.citations:
             for citation in result.answer.citations:
